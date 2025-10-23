@@ -131,6 +131,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccessToken(null);
     setUser(null);
     setTokenExpiresAt(0);
+
+    // Redirect to home page
+    window.location.href = '/';
   }, []);
 
   return (

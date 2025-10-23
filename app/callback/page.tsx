@@ -48,18 +48,39 @@ export default function CallbackPage() {
 
         const data = await response.json();
 
-        // Calculate token expiry time
-        const expiryTime = calculateExpiryTime(data.expires_in);
+        // Log user data received from JKKN (visible in browser console)
+        console.log('========================================');
+        console.log('JKKN User Data Received:');
+        console.log('========================================');
+        console.log('User Object:', data.user);
+        console.log('Available User Fields:', Object.keys(data.user || {}));
+        console.log('========================================');
 
-        // Save tokens and user data
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('token_expires_at', expiryTime.toString());
+        // Store user and session in Supabase (NOT localStorage!)
+        const storeResponse = await fetch('/api/auth/store-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user: data.user,
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+            expires_in: data.expires_in,
+          }),
+        });
+
+        if (!storeResponse.ok) {
+          const errorData = await storeResponse.json();
+          throw new Error(errorData.error || 'Failed to store session');
+        }
+
+        const sessionData = await storeResponse.json();
+
+        // Store only session ID in localStorage for quick access
+        localStorage.setItem('session_id', sessionData.session_id);
         localStorage.removeItem('oauth_state');
 
-        // Redirect to home
-        router.push('/');
+        // Redirect based on user role
+        router.push(sessionData.redirect_url || '/');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Authentication failed');
       }
