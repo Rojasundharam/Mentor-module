@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
+ * Transform MyJKKN API institution response to match our interface
+ */
+function transformInstitutionData(apiInstitution: any) {
+  return {
+    id: apiInstitution.id || apiInstitution.institution_id,
+    name: apiInstitution.name || apiInstitution.institution_name || apiInstitution.institutionName || 'Unnamed Institution',
+    counselling_code: apiInstitution.counselling_code || apiInstitution.counsellingCode || apiInstitution.code || 'N/A',
+    category: apiInstitution.category || apiInstitution.institution_category || 'Uncategorized',
+    institution_type: apiInstitution.institution_type || apiInstitution.institutionType || apiInstitution.type || 'Not Specified',
+    is_active: apiInstitution.is_active ?? apiInstitution.isActive ?? apiInstitution.active ?? true,
+    created_at: apiInstitution.created_at || apiInstitution.createdAt || new Date().toISOString(),
+    updated_at: apiInstitution.updated_at || apiInstitution.updatedAt || new Date().toISOString(),
+  };
+}
+
+/**
  * GET /api/jkkn/institutions
  * Fetch institutions from JKKN API (server-side with secure API key)
  *
@@ -57,9 +73,23 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
+    // Debug: Log the actual API response to see field names
+    console.log('Institutions API Response:', JSON.stringify(data, null, 2));
+    if (data.data && data.data.length > 0) {
+      console.log('First institution object:', JSON.stringify(data.data[0], null, 2));
+    }
+
+    // Transform the data to match our interface
+    const transformedData = {
+      ...data,
+      data: data.data ? data.data.map(transformInstitutionData) : []
+    };
+
+    console.log('Transformed institution data:', JSON.stringify(transformedData.data[0], null, 2));
+
     return NextResponse.json({
       success: true,
-      ...data,
+      ...transformedData,
     });
 
   } catch (error: any) {

@@ -126,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     localStorage.removeItem('token_expires_at');
+    localStorage.removeItem('session_id');
     localStorage.removeItem('oauth_state');
 
     setAccessToken(null);

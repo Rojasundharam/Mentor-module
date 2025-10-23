@@ -5,14 +5,14 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 function transformDegreeData(apiDegree: any) {
   return {
-    id: apiDegree.id,
-    // Map actual API field names to our interface
-    name: apiDegree.degree_name || apiDegree.name || undefined,
-    abbreviation: apiDegree.degree_id || apiDegree.abbreviation || undefined,
-    level: apiDegree.degree_type || apiDegree.level || undefined,
-    is_active: apiDegree.is_active ?? true,
-    created_at: apiDegree.created_at || new Date().toISOString(),
-    updated_at: apiDegree.updated_at || new Date().toISOString(),
+    id: apiDegree.id || apiDegree.degree_id,
+    // Map actual API field names to our interface - handle multiple possible field names
+    name: apiDegree.degree_name || apiDegree.name || apiDegree.degreeName || apiDegree.title || 'Unnamed Degree',
+    abbreviation: apiDegree.abbreviation || apiDegree.degree_abbreviation || apiDegree.short_name || apiDegree.code || apiDegree.degree_code || 'N/A',
+    level: apiDegree.level || apiDegree.degree_level || apiDegree.degree_type || apiDegree.type || apiDegree.category || 'Not Specified',
+    is_active: apiDegree.is_active ?? apiDegree.isActive ?? apiDegree.active ?? true,
+    created_at: apiDegree.created_at || apiDegree.createdAt || new Date().toISOString(),
+    updated_at: apiDegree.updated_at || apiDegree.updatedAt || new Date().toISOString(),
   };
 }
 

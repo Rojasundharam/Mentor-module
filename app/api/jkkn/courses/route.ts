@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
+ * Transform MyJKKN API course response to match our interface
+ */
+function transformCourseData(apiCourse: any) {
+  return {
+    id: apiCourse.id || apiCourse.course_id,
+    title: apiCourse.title || apiCourse.course_title || apiCourse.name || apiCourse.course_name || 'Unnamed Course',
+    code: apiCourse.code || apiCourse.course_code || apiCourse.courseCode || 'N/A',
+    description: apiCourse.description || apiCourse.course_description || '',
+    credit_hours: apiCourse.credit_hours || apiCourse.creditHours || apiCourse.credits || 0,
+    program_id: apiCourse.program_id || apiCourse.programId || '',
+    is_active: apiCourse.is_active ?? apiCourse.isActive ?? apiCourse.active ?? true,
+    created_at: apiCourse.created_at || apiCourse.createdAt || new Date().toISOString(),
+    updated_at: apiCourse.updated_at || apiCourse.updatedAt || new Date().toISOString(),
+  };
+}
+
+/**
  * GET /api/jkkn/courses
  * Fetch courses from JKKN API (server-side with secure API key)
  *
@@ -57,9 +74,23 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
+    // Debug: Log the actual API response to see field names
+    console.log('Courses API Response:', JSON.stringify(data, null, 2));
+    if (data.data && data.data.length > 0) {
+      console.log('First course object:', JSON.stringify(data.data[0], null, 2));
+    }
+
+    // Transform the data to match our interface
+    const transformedData = {
+      ...data,
+      data: data.data ? data.data.map(transformCourseData) : []
+    };
+
+    console.log('Transformed course data:', JSON.stringify(transformedData.data[0], null, 2));
+
     return NextResponse.json({
       success: true,
-      ...data,
+      ...transformedData,
     });
 
   } catch (error: any) {

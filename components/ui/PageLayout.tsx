@@ -131,6 +131,7 @@ interface HeroProps {
   children?: React.ReactNode;
   alignment?: 'left' | 'center';
   background?: 'cream' | 'white' | 'green';
+  noPadding?: boolean;
 }
 
 export function Hero({
@@ -138,7 +139,8 @@ export function Hero({
   subtitle,
   children,
   alignment = 'center',
-  background = 'cream'
+  background = 'cream',
+  noPadding = false
 }: HeroProps) {
   const alignments = {
     left: 'text-left',
@@ -152,24 +154,24 @@ export function Hero({
   };
 
   const textColor = background === 'green' ? 'text-brand-cream' : 'text-brand-green';
-  const subtitleColor = background === 'green' ? 'text-brand-cream' : 'text-neutral-700';
+  const subtitleColor = background === 'green' ? 'text-brand-cream' : 'text-neutral-600';
 
   return (
-    <Section background={background} spacing="xl">
-      <Container>
+    <Section background={background} spacing="md">
+      <Container className={noPadding ? '!px-0' : ''}>
         <div className={alignments[alignment]}>
-          <h1 className={`text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold ${textColor} mb-6`}>
+          <h1 className={`text-3xl md:text-4xl lg:text-5xl font-bold ${textColor} mb-3`}>
             {title}
           </h1>
 
           {subtitle && (
-            <p className={`text-lg md:text-xl lg:text-2xl ${subtitleColor} mb-8 max-w-3xl ${alignment === 'center' ? 'mx-auto' : ''}`}>
+            <p className={`text-base md:text-lg ${subtitleColor} max-w-3xl ${alignment === 'center' ? 'mx-auto' : ''}`}>
               {subtitle}
             </p>
           )}
 
           {children && (
-            <div className={`flex gap-4 ${alignment === 'center' ? 'justify-center' : ''} flex-wrap`}>
+            <div className={`flex gap-4 ${alignment === 'center' ? 'justify-center' : ''} flex-wrap mt-6`}>
               {children}
             </div>
           )}

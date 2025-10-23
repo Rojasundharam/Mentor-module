@@ -25,23 +25,23 @@ export default function Badge({
   className = ''
 }: BadgeProps) {
   const variants = {
-    default: 'bg-neutral-100 text-neutral-700',
-    success: 'bg-primary-100 text-brand-green',
-    warning: 'bg-accent-100 text-accent-800',
-    error: 'bg-red-100 text-red-700',
-    info: 'bg-blue-100 text-blue-700'
+    default: 'bg-neutral-100 text-neutral-700 border border-neutral-300',
+    success: 'bg-primary-100 text-brand-green border border-brand-green',
+    warning: 'bg-accent-100 text-accent-800 border border-accent-500',
+    error: 'bg-red-100 text-red-700 border border-red-300',
+    info: 'bg-blue-100 text-blue-700 border border-blue-300'
   };
 
   const sizes = {
-    sm: 'text-xs px-2 py-0.5',
-    md: 'text-sm px-3 py-1',
-    lg: 'text-base px-4 py-1.5'
+    sm: 'text-xs px-2.5 py-1',
+    md: 'text-sm px-3 py-1.5',
+    lg: 'text-base px-4 py-2'
   };
 
   return (
     <span
       className={`
-        inline-flex items-center font-medium rounded-full
+        inline-flex items-center font-semibold rounded-full
         ${variants[variant]} ${sizes[size]} ${className}
       `}
     >

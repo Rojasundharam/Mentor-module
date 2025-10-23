@@ -35,7 +35,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         {/* Top Header Bar */}
         <header className="bg-white border-b-2 border-brand-green sticky top-0 z-30 shadow-sm">
           <div className="flex items-center justify-between px-4 py-3 lg:px-8 lg:py-4">
@@ -102,7 +102,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto [&>*:first-child]:!pt-0">
           {children}
         </main>
 

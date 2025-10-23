@@ -5,7 +5,10 @@
       "Bash(node:*)",
       "Read(//c/Users/admin/Pictures/Screenshots/**)",
       "Bash(git push:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__get_advisors"
     ],
     "deny": [],
     "ask": []

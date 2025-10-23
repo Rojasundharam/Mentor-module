@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
+ * Transform MyJKKN API department response to match our interface
+ */
+function transformDepartmentData(apiDepartment: any) {
+  return {
+    id: apiDepartment.id || apiDepartment.department_id,
+    name: apiDepartment.name || apiDepartment.department_name || apiDepartment.departmentName || 'Unnamed Department',
+    code: apiDepartment.code || apiDepartment.department_code || apiDepartment.dept_code || apiDepartment.short_name || 'N/A',
+    institution_id: apiDepartment.institution_id || apiDepartment.institutionId || '',
+    is_active: apiDepartment.is_active ?? apiDepartment.isActive ?? apiDepartment.active ?? true,
+    created_at: apiDepartment.created_at || apiDepartment.createdAt || new Date().toISOString(),
+    updated_at: apiDepartment.updated_at || apiDepartment.updatedAt || new Date().toISOString(),
+  };
+}
+
+/**
  * GET /api/jkkn/departments
  * Fetch departments from JKKN API (server-side with secure API key)
  *
@@ -57,9 +72,23 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
+    // Debug: Log the actual API response to see field names
+    console.log('Departments API Response:', JSON.stringify(data, null, 2));
+    if (data.data && data.data.length > 0) {
+      console.log('First department object:', JSON.stringify(data.data[0], null, 2));
+    }
+
+    // Transform the data to match our interface
+    const transformedData = {
+      ...data,
+      data: data.data ? data.data.map(transformDepartmentData) : []
+    };
+
+    console.log('Transformed department data:', JSON.stringify(transformedData.data[0], null, 2));
+
     return NextResponse.json({
       success: true,
-      ...data,
+      ...transformedData,
     });
 
   } catch (error: any) {

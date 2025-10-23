@@ -241,9 +241,9 @@ export function getDefaultRouteForRole(role: string): string {
     faculty: '/mentor',
     hod: '/dashboard',
     principal: '/dashboard',
-    administrator: '/admin',
-    digital_coordinator: '/admin',
-    super_admin: '/admin',
+    administrator: '/dashboard',
+    digital_coordinator: '/dashboard',
+    super_admin: '/dashboard',
   };
 
   return roleRoutes[role] || '/';

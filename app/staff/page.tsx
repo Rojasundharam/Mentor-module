@@ -29,6 +29,7 @@ export default function StaffPage() {
 
   // Search and filters
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   // Check API status on mount
   useEffect(() => {
@@ -136,10 +137,42 @@ export default function StaffPage() {
   };
 
   /**
-   * Get gender badge variant
+   * Get designation badge variant based on role
    */
-  const getGenderBadgeVariant = (gender: string): 'default' | 'success' => {
-    return gender.toLowerCase() === 'male' ? 'default' : 'success';
+  const getDesignationVariant = (designation: string): 'default' | 'success' | 'warning' | 'info' => {
+    const role = designation.toLowerCase();
+    if (role.includes('hod') || role.includes('principal') || role.includes('dean')) {
+      return 'success'; // Green for leadership
+    }
+    if (role.includes('professor') || role.includes('associate')) {
+      return 'info'; // Blue for senior faculty
+    }
+    if (role.includes('assistant') || role.includes('lecturer')) {
+      return 'warning'; // Yellow for junior faculty
+    }
+    return 'default'; // Gray for others
+  };
+
+  /**
+   * Get gender display with icon
+   */
+  const getGenderDisplay = (gender: string) => {
+    const isMale = gender.toLowerCase() === 'male';
+    return {
+      icon: isMale ? '♂' : '♀',
+      variant: isMale ? 'info' as const : 'success' as const,
+      label: gender.charAt(0).toUpperCase() + gender.slice(1)
+    };
+  };
+
+  /**
+   * Format display value (handle N/A)
+   */
+  const formatDisplayValue = (value: string | null | undefined, fallback: string = '—'): string => {
+    if (!value || value === 'N/A' || value.trim() === '') {
+      return fallback;
+    }
+    return value;
   };
 
   return (
@@ -183,25 +216,60 @@ export default function StaffPage() {
         {isConfigured && (
           <Card variant="default">
             {/* Search and Actions Bar */}
-            <div className="flex items-center justify-between gap-4 mb-6">
-              <div className="flex-1 max-w-md">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div className="flex-1 w-full sm:max-w-md">
                 <SearchInput
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name, email, designation, or department..."
                 />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadStaff(currentPage)}
-                disabled={loading}
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh
-              </Button>
+              <div className="flex items-center gap-3">
+                {/* View Toggle */}
+                <div className="flex items-center gap-2 bg-white rounded-lg border-2 border-brand-green p-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`px-4 py-2 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center gap-2 ${
+                      viewMode === 'grid'
+                        ? 'bg-brand-yellow text-brand-green'
+                        : 'text-neutral-600 hover:bg-brand-cream'
+                    }`}
+                    aria-label="Grid view"
+                    aria-pressed={viewMode === 'grid'}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    <span className="hidden md:inline text-sm font-medium">Grid</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={`px-4 py-2 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center gap-2 ${
+                      viewMode === 'table'
+                        ? 'bg-brand-yellow text-brand-green'
+                        : 'text-neutral-600 hover:bg-brand-cream'
+                    }`}
+                    aria-label="Table view"
+                    aria-pressed={viewMode === 'table'}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span className="hidden md:inline text-sm font-medium">Table</span>
+                  </button>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadStaff(currentPage)}
+                  disabled={loading}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh
+                </Button>
+              </div>
             </div>
 
             {/* Stats */}
@@ -241,91 +309,198 @@ export default function StaffPage() {
               </div>
             )}
 
-            {/* Data Table */}
+            {/* Data Content */}
             {!loading && !error && filteredStaff.length > 0 && (
               <>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-brand-cream border-b-2 border-brand-green">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Staff Member
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Designation
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Contact
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Department
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Institution
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Gender
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-neutral-200">
-                      {filteredStaff.map((member) => (
-                        <tr
+                {/* Grid View */}
+                {viewMode === 'grid' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredStaff.map((member) => {
+                      const genderInfo = getGenderDisplay(member.gender);
+                      return (
+                        <Card
                           key={member.id}
-                          className="hover:bg-brand-cream hover:bg-opacity-50 transition-colors"
+                          variant="bordered"
+                          hoverable
+                          className="transition-all"
                         >
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-sm font-bold flex-shrink-0">
+                          <div className="flex items-start gap-4">
+                            {/* Avatar */}
+                            <div className="flex-shrink-0">
+                              <div className="w-16 h-16 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-2xl font-bold border-2 border-brand-green">
                                 {member.first_name.charAt(0)}{member.last_name.charAt(0)}
                               </div>
-                              <div>
-                                <p className="font-medium text-brand-green">
-                                  {getFullName(member)}
-                                </p>
+                            </div>
+
+                            {/* Staff Info */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-lg font-bold text-brand-green mb-1 truncate">
+                                {getFullName(member)}
+                              </h3>
+
+                              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                <Badge variant={getDesignationVariant(member.designation)} size="sm">
+                                  {member.designation}
+                                </Badge>
+                                <Badge variant={genderInfo.variant} size="sm">
+                                  {genderInfo.icon} {genderInfo.label}
+                                </Badge>
+                              </div>
+
+                              <div className="space-y-2 text-sm text-neutral-600 mb-3">
+                                <div className="flex items-center gap-2">
+                                  <svg
+                                    className="w-4 h-4 flex-shrink-0"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                    />
+                                  </svg>
+                                  <span className="truncate">{member.email}</span>
+                                </div>
+
+                                {member.phone && (
+                                  <div className="flex items-center gap-2">
+                                    <svg
+                                      className="w-4 h-4 flex-shrink-0"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                      />
+                                    </svg>
+                                    <span>{member.phone}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="pt-3 border-t border-neutral-200 space-y-1">
+                                <div className="text-xs text-neutral-500">Department</div>
+                                <div className="text-sm font-medium text-brand-green">
+                                  {formatDisplayValue(getDepartmentName(member.department))}
+                                </div>
+                                {getInstitutionName(member.institution) !== 'N/A' && (
+                                  <>
+                                    <div className="text-xs text-neutral-500 mt-2">Institution</div>
+                                    <div className="text-sm text-neutral-700">
+                                      {getInstitutionName(member.institution)}
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-yellow text-brand-green">
-                              {member.designation}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5 text-sm text-neutral-700">
-                                <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                <span className="truncate max-w-[200px]">{member.email}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-sm text-neutral-700">
-                                <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                </svg>
-                                <span>{member.phone}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 text-sm text-neutral-700">
-                            {getDepartmentName(member.department)}
-                          </td>
-                          <td className="px-4 py-4 text-sm text-neutral-700">
-                            {getInstitutionName(member.institution)}
-                          </td>
-                          <td className="px-4 py-4">
-                            <Badge
-                              variant={getGenderBadgeVariant(member.gender)}
-                              size="sm"
-                            >
-                              {member.gender}
-                            </Badge>
-                          </td>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Table View */}
+                {viewMode === 'table' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-brand-cream border-b-2 border-brand-green">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
+                            Staff Member
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
+                            Designation
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
+                            Contact
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
+                            Department
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
+                            Institution
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
+                            Gender
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-200">
+                        {filteredStaff.map((member) => {
+                          const genderInfo = getGenderDisplay(member.gender);
+                          return (
+                            <tr
+                              key={member.id}
+                              className="hover:bg-brand-cream hover:bg-opacity-50 transition-colors"
+                            >
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                    {member.first_name.charAt(0)}{member.last_name.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-brand-green">
+                                      {getFullName(member)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <Badge variant={getDesignationVariant(member.designation)} size="sm">
+                                  {member.designation}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 text-sm text-neutral-700">
+                                    <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="truncate max-w-[200px]">{member.email}</span>
+                                  </div>
+                                  {member.phone && (
+                                    <div className="flex items-center gap-1.5 text-sm text-neutral-700">
+                                      <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                      </svg>
+                                      <span>{member.phone}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className="text-sm font-medium text-brand-green">
+                                  {formatDisplayValue(getDepartmentName(member.department))}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className="text-sm text-neutral-700">
+                                  {formatDisplayValue(getInstitutionName(member.institution))}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4">
+                                <Badge
+                                  variant={genderInfo.variant}
+                                  size="sm"
+                                >
+                                  {genderInfo.icon} {genderInfo.label}
+                                </Badge>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
                 {/* Pagination */}
                 {!searchQuery && totalPages > 1 && (

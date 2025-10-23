@@ -1,6 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
+ * Transform MyJKKN API student response to match our interface
+ */
+function transformStudentData(apiStudent: any) {
+  return {
+    id: apiStudent.id || apiStudent.student_id,
+    first_name: apiStudent.first_name || apiStudent.firstName || '',
+    last_name: apiStudent.last_name || apiStudent.lastName || '',
+    roll_number: apiStudent.roll_number || apiStudent.rollNumber || apiStudent.roll_no || '',
+    // Handle nested institution object
+    institution: apiStudent.institution
+      ? (typeof apiStudent.institution === 'object'
+          ? {
+              id: apiStudent.institution.id || apiStudent.institution.institution_id,
+              name: apiStudent.institution.name || apiStudent.institution.institution_name || 'Unknown Institution'
+            }
+          : apiStudent.institution)
+      : (apiStudent.institution_id || apiStudent.institution_name
+          ? { id: apiStudent.institution_id || '', name: apiStudent.institution_name || 'Unknown Institution' }
+          : 'Unknown Institution'),
+    // Handle nested department object
+    department: apiStudent.department
+      ? (typeof apiStudent.department === 'object'
+          ? {
+              id: apiStudent.department.id || apiStudent.department.department_id,
+              name: apiStudent.department.name || apiStudent.department.department_name || 'Unknown Department'
+            }
+          : apiStudent.department)
+      : (apiStudent.department_id || apiStudent.department_name
+          ? { id: apiStudent.department_id || '', name: apiStudent.department_name || 'Unknown Department' }
+          : 'Unknown Department'),
+    // Handle nested program object
+    program: apiStudent.program
+      ? (typeof apiStudent.program === 'object'
+          ? {
+              id: apiStudent.program.id || apiStudent.program.program_id,
+              name: apiStudent.program.name || apiStudent.program.program_name || 'Unknown Program'
+            }
+          : apiStudent.program)
+      : (apiStudent.program_id || apiStudent.program_name
+          ? { id: apiStudent.program_id || '', name: apiStudent.program_name || 'Unknown Program' }
+          : 'Unknown Program'),
+    is_profile_complete: apiStudent.is_profile_complete ?? apiStudent.isProfileComplete ?? false,
+    created_at: apiStudent.created_at || apiStudent.createdAt || new Date().toISOString(),
+    updated_at: apiStudent.updated_at || apiStudent.updatedAt || new Date().toISOString(),
+  };
+}
+
+/**
  * GET /api/jkkn/students
  * Fetch students from JKKN API (server-side with secure API key)
  *
@@ -57,9 +105,23 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
+    // Debug: Log the actual API response to see field names
+    console.log('Students API Response:', JSON.stringify(data, null, 2));
+    if (data.data && data.data.length > 0) {
+      console.log('First student object:', JSON.stringify(data.data[0], null, 2));
+    }
+
+    // Transform the data to match our interface
+    const transformedData = {
+      ...data,
+      data: data.data ? data.data.map(transformStudentData) : []
+    };
+
+    console.log('Transformed student data:', JSON.stringify(transformedData.data[0], null, 2));
+
     return NextResponse.json({
       success: true,
-      ...data,
+      ...transformedData,
     });
 
   } catch (error: any) {

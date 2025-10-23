@@ -67,32 +67,47 @@ export default function Skeleton({
 /**
  * SkeletonCard Component
  *
- * Pre-built skeleton for card layouts
+ * Pre-built skeleton for card layouts (matches mentor card structure)
  */
 export function SkeletonCard({ className = '' }: { className?: string }) {
   return (
-    <div className={`bg-white rounded-lg border border-neutral-200 p-6 ${className}`}>
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Skeleton variant="circular" width={48} height={48} />
+    <div className={`bg-brand-cream rounded-xl border-2 border-brand-green p-6 ${className}`}>
+      <div className="flex flex-col h-full">
+        {/* Avatar and Basic Info */}
+        <div className="flex items-start gap-4 mb-4">
+          <Skeleton variant="circular" width={64} height={64} />
           <div className="flex-1 space-y-2">
-            <Skeleton variant="text" width="60%" />
-            <Skeleton variant="text" width="40%" />
+            <Skeleton variant="text" width="70%" height={20} />
+            <Skeleton variant="text" width="50%" height={16} />
           </div>
         </div>
 
-        {/* Content */}
-        <div className="space-y-2">
-          <Skeleton variant="text" width="100%" />
-          <Skeleton variant="text" width="90%" />
-          <Skeleton variant="text" width="75%" />
+        {/* Badge */}
+        <div className="mb-4">
+          <Skeleton variant="rounded" width={120} height={24} />
+        </div>
+
+        {/* Contact Info */}
+        <div className="space-y-2.5 mb-4">
+          <div className="flex items-center gap-2.5">
+            <Skeleton variant="circular" width={16} height={16} />
+            <Skeleton variant="text" width="80%" height={14} />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Skeleton variant="circular" width={16} height={16} />
+            <Skeleton variant="text" width="60%" height={14} />
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 pt-2">
-          <Skeleton variant="rounded" width={80} height={36} />
-          <Skeleton variant="rounded" width={80} height={36} />
+        <div className="mt-auto pt-4 border-t border-neutral-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton variant="circular" width={20} height={20} />
+              <Skeleton variant="text" width={60} height={16} />
+            </div>
+            <Skeleton variant="text" width={50} height={16} />
+          </div>
         </div>
       </div>
     </div>

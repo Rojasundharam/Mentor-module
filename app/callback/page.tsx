@@ -75,7 +75,12 @@ export default function CallbackPage() {
 
         const sessionData = await storeResponse.json();
 
-        // Store only session ID in localStorage for quick access
+        // Store authentication data in localStorage for AuthProvider
+        const tokenExpiresAt = Date.now() + (data.expires_in * 1000);
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token_expires_at', tokenExpiresAt.toString());
         localStorage.setItem('session_id', sessionData.session_id);
         localStorage.removeItem('oauth_state');
 
