@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm install:*)",
       "Bash(node:*)",
-      "Read(//c/Users/admin/Pictures/Screenshots/**)"
+      "Read(//c/Users/admin/Pictures/Screenshots/**)",
+      "Bash(git push:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

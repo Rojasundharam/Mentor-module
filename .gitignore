@@ -38,6 +38,3 @@ next-env.d.ts
 
 # MCP configuration
 mcp.json
-
-# Other directories
-roja/
