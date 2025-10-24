@@ -1,27 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import SearchInput from '@/components/ui/SearchInput';
 import {
-  fetchDepartments,
+  fetchDegrees,
   checkApiStatus,
   formatDate,
-  type Department,
+  type Degree,
   type ApiError,
 } from '@/lib/api/jkkn-api';
 
-export default function DepartmentsPage() {
+export default function DegreesPage() {
   // API status
   const [isConfigured, setIsConfigured] = useState(false);
   const [statusMessage, setStatusMessage] = useState('Checking API...');
 
-  // Departments data
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
+  // Degrees data
+  const [degrees, setDegrees] = useState<Degree[]>([]);
+  const [filteredDegrees, setFilteredDegrees] = useState<Degree[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,25 +35,26 @@ export default function DepartmentsPage() {
     checkStatus();
   }, []);
 
-  // Fetch departments when API is configured
+  // Fetch degrees when API is configured
   useEffect(() => {
     if (isConfigured) {
-      loadDepartments(1);
+      loadDegrees(1);
     }
   }, [isConfigured]);
 
-  // Filter departments based on search
+  // Filter degrees based on search
   useEffect(() => {
     if (searchQuery) {
-      const filtered = departments.filter((dept) =>
-        dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        dept.code.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = degrees.filter((degree) =>
+        degree.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        degree.abbreviation?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        degree.level?.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setFilteredDepartments(filtered);
+      setFilteredDegrees(filtered);
     } else {
-      setFilteredDepartments(departments);
+      setFilteredDegrees(degrees);
     }
-  }, [searchQuery, departments]);
+  }, [searchQuery, degrees]);
 
   /**
    * Check API configuration status
@@ -71,23 +71,23 @@ export default function DepartmentsPage() {
   };
 
   /**
-   * Load departments data
+   * Load degrees data
    */
-  const loadDepartments = async (page: number = 1) => {
+  const loadDegrees = async (page: number = 1) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetchDepartments(page, 10);
+      const response = await fetchDegrees(page, 10);
 
-      setDepartments(response.data);
-      setFilteredDepartments(response.data);
+      setDegrees(response.data);
+      setFilteredDegrees(response.data);
       setCurrentPage(response.metadata.page);
       setTotalPages(response.metadata.totalPages);
       setTotal(response.metadata.total);
     } catch (err: any) {
       const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to fetch departments data');
+      setError(apiError.message || 'Failed to fetch degrees data');
     } finally {
       setLoading(false);
     }
@@ -98,21 +98,32 @@ export default function DepartmentsPage() {
    */
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    loadDepartments(page);
+    loadDegrees(page);
     setSearchQuery(''); // Clear search when changing pages
   };
 
+  /**
+   * Get level badge variant based on level
+   */
+  const getLevelBadgeVariant = (level: string): 'default' | 'success' => {
+    if (!level) return 'default';
+    const lowerLevel = level.toLowerCase();
+    if (lowerLevel.includes('bachelor') || lowerLevel.includes('ug')) {
+      return 'default';
+    }
+    return 'success';
+  };
+
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-brand-green mb-2">
-              JKKN Departments
+              JKKN Degrees
             </h1>
             <p className="text-neutral-600">
-              Browse and manage departments from MyJKKN database
+              Browse and manage degree programs from MyJKKN database
             </p>
           </div>
           {isConfigured && (
@@ -132,7 +143,7 @@ export default function DepartmentsPage() {
               <div>
                 <p className="text-lg font-semibold text-yellow-800 mb-1">API Not Configured</p>
                 <p className="text-sm text-yellow-700">
-                  {statusMessage}. Please add NEXT_PUBLIC_MYJKKN_API_KEY to your .env.local file to view departments data.
+                  {statusMessage}. Please add NEXT_PUBLIC_MYJKKN_API_KEY to your .env.local file to view degrees data.
                 </p>
               </div>
             </div>
@@ -148,13 +159,13 @@ export default function DepartmentsPage() {
                 <SearchInput
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name or code..."
+                  placeholder="Search by name, abbreviation, or level..."
                 />
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => loadDepartments(currentPage)}
+                onClick={() => loadDegrees(currentPage)}
                 disabled={loading}
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,9 +178,9 @@ export default function DepartmentsPage() {
             {/* Stats */}
             <div className="mb-6 flex items-center gap-2 text-sm text-neutral-600">
               <span className="font-medium text-brand-green">
-                {searchQuery ? filteredDepartments.length : total}
+                {searchQuery ? filteredDegrees.length : total}
               </span>
-              {searchQuery ? 'matching' : 'total'} departments
+              {searchQuery ? 'matching' : 'total'} degrees
               {!searchQuery && (
                 <>
                   <span>•</span>
@@ -182,7 +193,7 @@ export default function DepartmentsPage() {
             {loading && (
               <div className="text-center py-16">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent mb-4"></div>
-                <p className="text-neutral-600 font-medium">Loading departments...</p>
+                <p className="text-neutral-600 font-medium">Loading degrees...</p>
               </div>
             )}
 
@@ -202,20 +213,20 @@ export default function DepartmentsPage() {
             )}
 
             {/* Data Table */}
-            {!loading && !error && filteredDepartments.length > 0 && (
+            {!loading && !error && filteredDegrees.length > 0 && (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-brand-cream border-b-2 border-brand-green">
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Department Name
+                          Degree Name
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Code
+                          Abbreviation
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Institution ID
+                          Level
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
                           Status
@@ -229,35 +240,42 @@ export default function DepartmentsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-200">
-                      {filteredDepartments.map((department) => (
+                      {filteredDegrees.map((degree) => (
                         <tr
-                          key={department.id}
+                          key={degree.id}
                           className="hover:bg-brand-cream hover:bg-opacity-50 transition-colors"
                         >
                           <td className="px-4 py-4">
                             <p className="font-medium text-brand-green">
-                              {department.name}
+                              {degree.name || 'N/A'}
                             </p>
                           </td>
-                          <td className="px-4 py-4 text-sm text-neutral-700 font-mono">
-                            {department.code}
-                          </td>
-                          <td className="px-4 py-4 text-sm text-neutral-700 font-mono">
-                            {department.institution_id}
+                          <td className="px-4 py-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-yellow text-brand-green">
+                              {degree.abbreviation || 'N/A'}
+                            </span>
                           </td>
                           <td className="px-4 py-4">
                             <Badge
-                              variant={department.is_active ? 'success' : 'default'}
+                              variant={getLevelBadgeVariant(degree.level)}
                               size="sm"
                             >
-                              {department.is_active ? 'Active' : 'Inactive'}
+                              {degree.level || 'N/A'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-4">
+                            <Badge
+                              variant={degree.is_active ? 'success' : 'default'}
+                              size="sm"
+                            >
+                              {degree.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </td>
                           <td className="px-4 py-4 text-sm text-neutral-600">
-                            {formatDate(department.created_at)}
+                            {formatDate(degree.created_at)}
                           </td>
                           <td className="px-4 py-4 text-sm text-neutral-600">
-                            {formatDate(department.updated_at)}
+                            {formatDate(degree.updated_at)}
                           </td>
                         </tr>
                       ))}
@@ -269,7 +287,7 @@ export default function DepartmentsPage() {
                 {!searchQuery && totalPages > 1 && (
                   <div className="mt-6 flex items-center justify-between border-t border-neutral-200 pt-4">
                     <p className="text-sm text-neutral-600">
-                      Showing {departments.length} of {total} results
+                      Showing {degrees.length} of {total} results
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -327,11 +345,11 @@ export default function DepartmentsPage() {
             )}
 
             {/* Empty State */}
-            {!loading && !error && filteredDepartments.length === 0 && (
+            {!loading && !error && filteredDegrees.length === 0 && (
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">📚</div>
+                <div className="text-6xl mb-4">🎓</div>
                 <h3 className="text-xl font-semibold text-brand-green mb-2">
-                  {searchQuery ? 'No matching departments' : 'No departments found'}
+                  {searchQuery ? 'No matching degrees' : 'No degrees found'}
                 </h3>
                 <p className="text-neutral-600">
                   {searchQuery
@@ -353,6 +371,5 @@ export default function DepartmentsPage() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
   );
 }

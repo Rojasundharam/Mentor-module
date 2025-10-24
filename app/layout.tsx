@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "JKKN Mentor",
-  description: "Powered by MyJKKN Authentication",
+  description: "Devloped by Roja",
 };
 
 export default function RootLayout({

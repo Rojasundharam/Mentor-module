@@ -84,8 +84,9 @@ export default function CallbackPage() {
         localStorage.setItem('session_id', sessionData.session_id);
         localStorage.removeItem('oauth_state');
 
-        // Redirect based on user role
-        router.push(sessionData.redirect_url || '/');
+        // Redirect based on user role (use window.location for full page reload)
+        // This ensures AuthProvider re-initializes and reads tokens from localStorage
+        window.location.href = sessionData.redirect_url || '/';
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Authentication failed');
       }

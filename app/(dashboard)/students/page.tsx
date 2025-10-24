@@ -1,27 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import SearchInput from '@/components/ui/SearchInput';
 import {
-  fetchInstitutions,
+  fetchStudents,
   checkApiStatus,
-  formatDate,
-  type Institution,
+  type Student,
   type ApiError,
 } from '@/lib/api/jkkn-api';
 
-export default function InstitutionsPage() {
+export default function StudentsPage() {
   // API status
   const [isConfigured, setIsConfigured] = useState(false);
   const [statusMessage, setStatusMessage] = useState('Checking API...');
 
-  // Institutions data
-  const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [filteredInstitutions, setFilteredInstitutions] = useState<Institution[]>([]);
+  // Students data
+  const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,26 +34,37 @@ export default function InstitutionsPage() {
     checkStatus();
   }, []);
 
-  // Fetch institutions when API is configured
+  // Fetch students when API is configured
   useEffect(() => {
     if (isConfigured) {
-      loadInstitutions(1);
+      loadStudents(1);
     }
   }, [isConfigured]);
 
-  // Filter institutions based on search
+  // Filter students based on search
   useEffect(() => {
     if (searchQuery) {
-      const filtered = institutions.filter((inst) =>
-        inst.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        inst.counselling_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        inst.category.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredInstitutions(filtered);
+      const filtered = students.filter((student) => {
+        const institutionName = getInstitutionName(student.institution);
+        const departmentName = getDepartmentName(student.department);
+        const programName = getProgramName(student.program);
+        const query = searchQuery.toLowerCase();
+
+        return (
+          student.first_name.toLowerCase().includes(query) ||
+          student.last_name.toLowerCase().includes(query) ||
+          student.roll_number.toLowerCase().includes(query) ||
+          institutionName.toLowerCase().includes(query) ||
+          departmentName.toLowerCase().includes(query) ||
+          programName.toLowerCase().includes(query) ||
+          `${student.first_name} ${student.last_name}`.toLowerCase().includes(query)
+        );
+      });
+      setFilteredStudents(filtered);
     } else {
-      setFilteredInstitutions(institutions);
+      setFilteredStudents(students);
     }
-  }, [searchQuery, institutions]);
+  }, [searchQuery, students]);
 
   /**
    * Check API configuration status
@@ -72,23 +81,23 @@ export default function InstitutionsPage() {
   };
 
   /**
-   * Load institutions data
+   * Load students data
    */
-  const loadInstitutions = async (page: number = 1) => {
+  const loadStudents = async (page: number = 1) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetchInstitutions(page, 10);
+      const response = await fetchStudents(page, 10);
 
-      setInstitutions(response.data);
-      setFilteredInstitutions(response.data);
+      setStudents(response.data);
+      setFilteredStudents(response.data);
       setCurrentPage(response.metadata.page);
       setTotalPages(response.metadata.totalPages);
       setTotal(response.metadata.total);
     } catch (err: any) {
       const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to fetch institutions data');
+      setError(apiError.message || 'Failed to fetch students data');
     } finally {
       setLoading(false);
     }
@@ -99,21 +108,51 @@ export default function InstitutionsPage() {
    */
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    loadInstitutions(page);
+    loadStudents(page);
     setSearchQuery(''); // Clear search when changing pages
   };
 
+  /**
+   * Get full name of student
+   */
+  const getFullName = (student: Student): string => {
+    return `${student.first_name} ${student.last_name}`;
+  };
+
+  /**
+   * Get institution name (handles both object and string)
+   */
+  const getInstitutionName = (institution: { id: string; name: string } | string): string => {
+    if (typeof institution === 'string') return institution;
+    return institution?.name || 'N/A';
+  };
+
+  /**
+   * Get department name (handles both object and string)
+   */
+  const getDepartmentName = (department: { id: string; name: string } | string): string => {
+    if (typeof department === 'string') return department;
+    return department?.name || 'N/A';
+  };
+
+  /**
+   * Get program name (handles both object and string)
+   */
+  const getProgramName = (program: { id: string; name: string } | string): string => {
+    if (typeof program === 'string') return program;
+    return program?.name || 'N/A';
+  };
+
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-brand-green mb-2">
-              JKKN Institutions
+              JKKN Students
             </h1>
             <p className="text-neutral-600">
-              Browse and manage institutions from MyJKKN database
+              Browse and manage student records from MyJKKN database
             </p>
           </div>
           {isConfigured && (
@@ -133,7 +172,7 @@ export default function InstitutionsPage() {
               <div>
                 <p className="text-lg font-semibold text-yellow-800 mb-1">API Not Configured</p>
                 <p className="text-sm text-yellow-700">
-                  {statusMessage}. Please add NEXT_PUBLIC_MYJKKN_API_KEY to your .env.local file to view institutions data.
+                  {statusMessage}. Please add NEXT_PUBLIC_MYJKKN_API_KEY to your .env.local file to view students data.
                 </p>
               </div>
             </div>
@@ -149,13 +188,13 @@ export default function InstitutionsPage() {
                 <SearchInput
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, code, or category..."
+                  placeholder="Search by name or roll number..."
                 />
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => loadInstitutions(currentPage)}
+                onClick={() => loadStudents(currentPage)}
                 disabled={loading}
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,9 +207,9 @@ export default function InstitutionsPage() {
             {/* Stats */}
             <div className="mb-6 flex items-center gap-2 text-sm text-neutral-600">
               <span className="font-medium text-brand-green">
-                {searchQuery ? filteredInstitutions.length : total}
+                {searchQuery ? filteredStudents.length : total}
               </span>
-              {searchQuery ? 'matching' : 'total'} institutions
+              {searchQuery ? 'matching' : 'total'} students
               {!searchQuery && (
                 <>
                   <span>•</span>
@@ -183,7 +222,7 @@ export default function InstitutionsPage() {
             {loading && (
               <div className="text-center py-16">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent mb-4"></div>
-                <p className="text-neutral-600 font-medium">Loading institutions...</p>
+                <p className="text-neutral-600 font-medium">Loading students...</p>
               </div>
             )}
 
@@ -203,62 +242,71 @@ export default function InstitutionsPage() {
             )}
 
             {/* Data Table */}
-            {!loading && !error && filteredInstitutions.length > 0 && (
+            {!loading && !error && filteredStudents.length > 0 && (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-brand-cream border-b-2 border-brand-green">
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Institution Name
+                          Student Name
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Code
+                          Roll Number
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Category
+                          Institution
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Type
+                          Department
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Status
+                          Program
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Created
+                          Profile Status
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-200">
-                      {filteredInstitutions.map((institution) => (
+                      {filteredStudents.map((student) => (
                         <tr
-                          key={institution.id}
+                          key={student.id}
                           className="hover:bg-brand-cream hover:bg-opacity-50 transition-colors"
                         >
                           <td className="px-4 py-4">
-                            <p className="font-medium text-brand-green">
-                              {institution.name}
-                            </p>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                {student.first_name.charAt(0)}{student.last_name.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-medium text-brand-green">
+                                  {getFullName(student)}
+                                </p>
+                              </div>
+                            </div>
                           </td>
-                          <td className="px-4 py-4 text-sm text-neutral-700 font-mono">
-                            {institution.counselling_code}
+                          <td className="px-4 py-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-yellow text-brand-green">
+                              {student.roll_number}
+                            </span>
                           </td>
                           <td className="px-4 py-4 text-sm text-neutral-700">
-                            {institution.category}
+                            {getInstitutionName(student.institution)}
                           </td>
                           <td className="px-4 py-4 text-sm text-neutral-700">
-                            {institution.institution_type}
+                            {getDepartmentName(student.department)}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-neutral-700">
+                            {getProgramName(student.program)}
                           </td>
                           <td className="px-4 py-4">
                             <Badge
-                              variant={institution.is_active ? 'success' : 'default'}
+                              variant={student.is_profile_complete ? 'success' : 'default'}
                               size="sm"
                             >
-                              {institution.is_active ? 'Active' : 'Inactive'}
+                              {student.is_profile_complete ? '✓ Complete' : '○ Incomplete'}
                             </Badge>
-                          </td>
-                          <td className="px-4 py-4 text-sm text-neutral-600">
-                            {formatDate(institution.created_at)}
                           </td>
                         </tr>
                       ))}
@@ -270,7 +318,7 @@ export default function InstitutionsPage() {
                 {!searchQuery && totalPages > 1 && (
                   <div className="mt-6 flex items-center justify-between border-t border-neutral-200 pt-4">
                     <p className="text-sm text-neutral-600">
-                      Showing {institutions.length} of {total} results
+                      Showing {students.length} of {total} results
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -328,11 +376,11 @@ export default function InstitutionsPage() {
             )}
 
             {/* Empty State */}
-            {!loading && !error && filteredInstitutions.length === 0 && (
+            {!loading && !error && filteredStudents.length === 0 && (
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">🏛️</div>
+                <div className="text-6xl mb-4">👨‍🎓</div>
                 <h3 className="text-xl font-semibold text-brand-green mb-2">
-                  {searchQuery ? 'No matching institutions' : 'No institutions found'}
+                  {searchQuery ? 'No matching students' : 'No students found'}
                 </h3>
                 <p className="text-neutral-600">
                   {searchQuery
@@ -354,6 +402,5 @@ export default function InstitutionsPage() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
   );
 }

@@ -7,7 +7,7 @@ function transformProgramData(apiProgram: any) {
   return {
     id: apiProgram.id || apiProgram.program_id,
     name: apiProgram.name || apiProgram.program_name || apiProgram.programName || apiProgram.title || 'Unnamed Program',
-    code: apiProgram.code || apiProgram.program_code || apiProgram.programCode || apiProgram.short_name || 'N/A',
+    code: apiProgram.code || apiProgram.program_code || apiProgram.programCode || apiProgram.short_name || '',
     department_id: apiProgram.department_id || apiProgram.departmentId || '',
     degree_id: apiProgram.degree_id || apiProgram.degreeId || '',
     is_active: apiProgram.is_active ?? apiProgram.isActive ?? apiProgram.active ?? true,

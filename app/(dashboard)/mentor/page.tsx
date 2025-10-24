@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Section, Container, Hero } from '@/components/ui/PageLayout';
 import Card from '@/components/ui/Card';
 import SearchInput from '@/components/ui/SearchInput';
@@ -16,7 +15,7 @@ import type { Mentor } from '@/lib/types/mentor';
 
 export default function MentorListingPage() {
   const router = useRouter();
-  const { user, accessToken, loading: authLoading } = useAuth();
+  const { user, accessToken } = useAuth();
 
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,24 +72,12 @@ export default function MentorListingPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, accessToken]);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
-
   const handleMentorClick = (mentorId: string) => {
     router.push(`/mentor/${mentorId}`);
   };
 
-  // Show nothing while redirecting
-  if (!authLoading && !user) {
-    return null;
-  }
-
   return (
-    <DashboardLayout>
+    <>
       <Hero
         title="Mentor Directory"
         subtitle="Connect with faculty mentors to manage student counseling, guidance, and academic progress"
@@ -410,6 +397,6 @@ export default function MentorListingPage() {
           )}
         </Container>
       </Section>
-    </DashboardLayout>
+    </>
   );
 }

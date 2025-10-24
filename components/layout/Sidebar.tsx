@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -8,6 +8,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed?: boolean;
 }
 
 interface NavItem {
@@ -25,17 +26,38 @@ interface NavSection {
   defaultOpen?: boolean;
 }
 
-export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, isCollapsed = false }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  // Track which sections are expanded
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    'people': true,
-    'academic': false,
-    'management': true
+  // Track which sections are expanded - with localStorage persistence
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
+    // Try to load from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sidebar_expanded_sections');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse sidebar state from localStorage', e);
+        }
+      }
+    }
+    // Default state if nothing in localStorage
+    return {
+      'people': true,
+      'academic': false,
+      'management': true
+    };
   });
+
+  // Save expanded sections to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar_expanded_sections', JSON.stringify(expandedSections));
+    }
+  }, [expandedSections]);
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({
@@ -225,21 +247,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full w-80
+          fixed top-0 left-0 z-50 h-full
+          ${isCollapsed ? 'lg:w-20' : 'w-80'}
           bg-brand-cream border-r-2 border-brand-green
-          transform transition-transform duration-300 ease-in-out
-          lg:translate-x-0 lg:static
+          transform transition-all duration-300 ease-in-out
+          lg:translate-x-0 lg:fixed
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          flex flex-col
+          flex flex-col overflow-hidden
         `}
         aria-label="Main navigation"
       >
         {/* Header */}
-        <div className="p-6 border-b-2 border-brand-green">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-brand-green flex items-center gap-2">
+        <div className={`border-b-2 border-brand-green ${isCollapsed ? 'lg:p-3' : 'p-6'} transition-all duration-300`}>
+          <div className={`flex items-center ${isCollapsed ? 'lg:justify-center' : 'justify-between'} mb-4`}>
+            <h1 className={`text-2xl font-bold text-brand-green flex items-center gap-2 ${isCollapsed ? 'lg:gap-0' : ''}`}>
               <span>🎓</span>
-              JKKN Mentor
+              <span className={isCollapsed ? 'lg:hidden' : ''}>JKKN Mentor</span>
             </h1>
             {/* Mobile Close Button */}
             <button
@@ -255,11 +278,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* User Profile */}
           {user && (
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-brand-green">
+            <div className={`flex items-center gap-3 p-3 bg-white rounded-lg border border-brand-green ${isCollapsed ? 'lg:justify-center lg:p-2' : ''}`}>
               <div className="w-12 h-12 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-xl font-bold flex-shrink-0">
                 {user.full_name.charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className={`flex-1 min-w-0 ${isCollapsed ? 'lg:hidden' : ''}`}>
                 <p className="font-semibold text-brand-green truncate">
                   {user.full_name}
                 </p>
@@ -288,8 +311,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <button
                       onClick={() => handleNavigation(item.href, item.comingSoon)}
                       className={`
-                        w-full flex items-center gap-3 px-4 py-3 rounded-lg
+                        w-full flex items-center gap-3 rounded-lg
                         font-medium transition-all
+                        ${isCollapsed ? 'lg:justify-center lg:px-2 lg:py-3' : 'px-4 py-3'}
                         ${active
                           ? 'bg-brand-yellow text-brand-green shadow-md'
                           : 'text-neutral-700 hover:bg-brand-yellow hover:bg-opacity-50'
@@ -298,18 +322,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         focus:outline-none focus:ring-2 focus:ring-brand-green
                       `}
                       aria-current={active ? 'page' : undefined}
+                      title={isCollapsed ? item.label : undefined}
                     >
                       <span className={active ? 'text-brand-green' : 'text-neutral-600'}>
                         {item.icon}
                       </span>
-                      <span className="flex-1 text-left">{item.label}</span>
-                      {item.comingSoon && (
-                        <span className="text-xs bg-neutral-200 text-neutral-600 px-2 py-1 rounded-full">
+                      <span className={`flex-1 text-left ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                      {item.comingSoon && !isCollapsed && (
+                        <span className="text-xs bg-neutral-200 text-neutral-600 px-2 py-1 rounded-full lg:block">
                           Soon
                         </span>
                       )}
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <span className="bg-brand-green text-brand-cream text-xs font-bold px-2 py-1 rounded-full">
+                      {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
+                        <span className="bg-brand-green text-brand-cream text-xs font-bold px-2 py-1 rounded-full lg:block">
                           {item.badge}
                         </span>
                       )}
@@ -322,27 +347,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               return (
                 <div key={sectionIndex} className="space-y-1">
                   {/* Section Header */}
-                  <button
-                    onClick={() => toggleSection(sectionId)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider hover:text-brand-green transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green rounded"
-                    aria-expanded={isExpanded}
-                    aria-controls={`section-${sectionId}`}
-                  >
-                    <span className="flex-1 text-left">{section.label}</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  {!isCollapsed && (
+                    <button
+                      onClick={() => toggleSection(sectionId)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider hover:text-brand-green transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green rounded lg:block"
+                      aria-expanded={isExpanded}
+                      aria-controls={`section-${sectionId}`}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                      <span className="flex-1 text-left">{section.label}</span>
+                      <svg
+                        className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
 
                   {/* Section Items */}
                   <div
                     id={`section-${sectionId}`}
-                    className={`space-y-1 ${isExpanded ? 'block animate-slideDown' : 'hidden'}`}
+                    className={`space-y-1 ${isCollapsed ? 'lg:block' : (isExpanded ? 'block animate-slideDown' : 'hidden')}`}
                   >
                     {section.items.map((item) => {
                       const active = isActive(item.href);
@@ -351,8 +378,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           key={item.href}
                           onClick={() => handleNavigation(item.href, item.comingSoon)}
                           className={`
-                            w-full flex items-center gap-3 px-4 py-2.5 rounded-lg
+                            w-full flex items-center gap-3 rounded-lg
                             font-medium text-sm transition-all
+                            ${isCollapsed ? 'lg:justify-center lg:px-2 lg:py-2.5' : 'px-4 py-2.5'}
                             ${active
                               ? 'bg-brand-yellow text-brand-green shadow-sm'
                               : 'text-neutral-700 hover:bg-brand-cream'
@@ -361,18 +389,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             focus:outline-none focus:ring-2 focus:ring-brand-green
                           `}
                           aria-current={active ? 'page' : undefined}
+                          title={isCollapsed ? item.label : undefined}
                         >
                           <span className={active ? 'text-brand-green' : 'text-neutral-500'}>
                             {item.icon}
                           </span>
-                          <span className="flex-1 text-left">{item.label}</span>
-                          {item.comingSoon && (
-                            <span className="text-xs bg-neutral-200 text-neutral-600 px-2 py-1 rounded-full">
+                          <span className={`flex-1 text-left ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                          {item.comingSoon && !isCollapsed && (
+                            <span className="text-xs bg-neutral-200 text-neutral-600 px-2 py-1 rounded-full lg:block">
                               Soon
                             </span>
                           )}
-                          {item.badge !== undefined && item.badge > 0 && (
-                            <span className="bg-brand-green text-brand-cream text-xs font-bold px-2 py-1 rounded-full">
+                          {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
+                            <span className="bg-brand-green text-brand-cream text-xs font-bold px-2 py-1 rounded-full lg:block">
                               {item.badge}
                             </span>
                           )}
@@ -387,20 +416,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer - Logout */}
-        <div className="p-4 border-t-2 border-brand-green">
+        <div className={`border-t-2 border-brand-green ${isCollapsed ? 'lg:p-2' : 'p-4'} transition-all duration-300`}>
           <button
             onClick={handleLogout}
-            className="
-              w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg
+            className={`
+              w-full flex items-center justify-center rounded-lg
               bg-brand-green text-brand-cream font-semibold
               hover:bg-primary-700 transition-colors
               focus:outline-none focus:ring-2 focus:ring-brand-green focus:ring-offset-2
-            "
+              ${isCollapsed ? 'lg:gap-0 lg:px-2 lg:py-3' : 'gap-3 px-4 py-3'}
+            `}
+            title={isCollapsed ? "Logout" : undefined}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Logout
+            <span className={isCollapsed ? 'lg:hidden' : ''}>Logout</span>
           </button>
         </div>
       </aside>

@@ -7,7 +7,7 @@ function transformCourseData(apiCourse: any) {
   return {
     id: apiCourse.id || apiCourse.course_id,
     title: apiCourse.title || apiCourse.course_title || apiCourse.name || apiCourse.course_name || 'Unnamed Course',
-    code: apiCourse.code || apiCourse.course_code || apiCourse.courseCode || 'N/A',
+    code: apiCourse.code || apiCourse.course_code || apiCourse.courseCode || '',
     description: apiCourse.description || apiCourse.course_description || '',
     credit_hours: apiCourse.credit_hours || apiCourse.creditHours || apiCourse.credits || 0,
     program_id: apiCourse.program_id || apiCourse.programId || '',

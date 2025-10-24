@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -11,7 +11,25 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sidebar_collapsed');
+      return stored === 'true';
+    }
+    return false;
+  });
   const pathname = usePathname();
+
+  // Persist sidebar collapsed state
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar_collapsed', String(sidebarCollapsed));
+    }
+  }, [sidebarCollapsed]);
+
+  const toggleSidebarCollapse = () => {
+    setSidebarCollapsed(prev => !prev);
+  };
 
   // Get page title from pathname
   const getPageTitle = () => {
@@ -32,23 +50,49 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-brand-cream flex">
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isCollapsed={sidebarCollapsed}
+      />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+      <div className={`flex-1 flex flex-col min-w-0 overflow-x-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-80'}`}>
         {/* Top Header Bar */}
-        <header className="bg-white border-b-2 border-brand-green sticky top-0 z-30 shadow-sm">
+        <header
+          className={`bg-white border-b-2 border-brand-green fixed top-0 left-0 right-0 z-30 shadow-sm transition-all duration-300 ${
+            sidebarCollapsed ? 'lg:left-20' : 'lg:left-80'
+          }`}
+        >
           <div className="flex items-center justify-between px-4 py-3 lg:px-8 lg:py-4">
-            {/* Mobile Menu Button - 44x44px touch target */}
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-brand-green hover:bg-brand-yellow p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Open menu"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Mobile Menu Button - 44x44px touch target */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden text-brand-green hover:bg-brand-yellow p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Open menu"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+
+              {/* Desktop Sidebar Toggle Button */}
+              <button
+                onClick={toggleSidebarCollapse}
+                className="hidden lg:flex text-brand-green hover:bg-brand-yellow p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] items-center justify-center"
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {sidebarCollapsed ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  )}
+                </svg>
+              </button>
+            </div>
 
             {/* Page Title */}
             <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-brand-green truncate px-2 flex-1">
@@ -96,20 +140,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Breadcrumbs */}
         {pathname !== '/dashboard' && (
-          <div className="bg-white border-b border-neutral-200 px-4 py-3 lg:px-8">
+          <div className="bg-white border-b border-neutral-200 px-4 py-3 lg:px-8 pt-20">
             <Breadcrumbs autoGenerate className="text-sm" />
           </div>
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto [&>*:first-child]:!pt-0">
+        <main className={`flex-1 overflow-auto ${pathname === '/dashboard' ? 'pt-20' : ''}`}>
           {children}
         </main>
 
         {/* Footer */}
         <footer className="bg-white border-t border-neutral-200 py-4 px-4 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-neutral-600">
-            <p>© 2025 JKKN College of Engineering. All rights reserved.</p>
+            <p>© 2025 JKKN Institutions. All rights reserved.</p>
             <p className="flex items-center gap-2">
               Powered by
               <span className="font-semibold text-brand-green">MyJKKN Auth</span>

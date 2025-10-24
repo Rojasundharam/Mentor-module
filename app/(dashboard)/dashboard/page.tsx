@@ -1,40 +1,14 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading } = useAuth();
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
-
-  // Show nothing while redirecting
-  if (!loading && !user) {
-    return null;
-  }
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent mb-4"></div>
-            <p className="text-neutral-600">Loading dashboard...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const { user } = useAuth();
 
   const stats = [
     {
@@ -113,8 +87,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <DashboardLayout>
-      <div className="p-4 lg:p-8 space-y-8">
+    <div className="p-4 lg:p-8 space-y-8">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-brand-green via-primary-600 to-primary-700 rounded-2xl p-6 sm:p-8 lg:p-10 text-brand-cream shadow-lg">
           <div className="max-w-3xl">
@@ -295,6 +268,5 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

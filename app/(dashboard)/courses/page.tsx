@@ -1,27 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import SearchInput from '@/components/ui/SearchInput';
 import {
-  fetchDegrees,
+  fetchCourses,
   checkApiStatus,
   formatDate,
-  type Degree,
+  type Course,
   type ApiError,
 } from '@/lib/api/jkkn-api';
 
-export default function DegreesPage() {
+export default function CoursesPage() {
   // API status
   const [isConfigured, setIsConfigured] = useState(false);
   const [statusMessage, setStatusMessage] = useState('Checking API...');
 
-  // Degrees data
-  const [degrees, setDegrees] = useState<Degree[]>([]);
-  const [filteredDegrees, setFilteredDegrees] = useState<Degree[]>([]);
+  // Courses data
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,26 +35,26 @@ export default function DegreesPage() {
     checkStatus();
   }, []);
 
-  // Fetch degrees when API is configured
+  // Fetch courses when API is configured
   useEffect(() => {
     if (isConfigured) {
-      loadDegrees(1);
+      loadCourses(1);
     }
   }, [isConfigured]);
 
-  // Filter degrees based on search
+  // Filter courses based on search
   useEffect(() => {
     if (searchQuery) {
-      const filtered = degrees.filter((degree) =>
-        degree.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        degree.abbreviation?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        degree.level?.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = courses.filter((course) =>
+        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setFilteredDegrees(filtered);
+      setFilteredCourses(filtered);
     } else {
-      setFilteredDegrees(degrees);
+      setFilteredCourses(courses);
     }
-  }, [searchQuery, degrees]);
+  }, [searchQuery, courses]);
 
   /**
    * Check API configuration status
@@ -72,23 +71,23 @@ export default function DegreesPage() {
   };
 
   /**
-   * Load degrees data
+   * Load courses data
    */
-  const loadDegrees = async (page: number = 1) => {
+  const loadCourses = async (page: number = 1) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetchDegrees(page, 10);
+      const response = await fetchCourses(page, 10);
 
-      setDegrees(response.data);
-      setFilteredDegrees(response.data);
+      setCourses(response.data);
+      setFilteredCourses(response.data);
       setCurrentPage(response.metadata.page);
       setTotalPages(response.metadata.totalPages);
       setTotal(response.metadata.total);
     } catch (err: any) {
       const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to fetch degrees data');
+      setError(apiError.message || 'Failed to fetch courses data');
     } finally {
       setLoading(false);
     }
@@ -99,33 +98,28 @@ export default function DegreesPage() {
    */
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    loadDegrees(page);
+    loadCourses(page);
     setSearchQuery(''); // Clear search when changing pages
   };
 
   /**
-   * Get level badge variant based on level
+   * Truncate description text
    */
-  const getLevelBadgeVariant = (level: string): 'default' | 'success' => {
-    if (!level) return 'default';
-    const lowerLevel = level.toLowerCase();
-    if (lowerLevel.includes('bachelor') || lowerLevel.includes('ug')) {
-      return 'default';
-    }
-    return 'success';
+  const truncateText = (text: string, maxLength: number = 80): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-brand-green mb-2">
-              JKKN Degrees
+              JKKN Courses
             </h1>
             <p className="text-neutral-600">
-              Browse and manage degree programs from MyJKKN database
+              Browse and manage course catalog from MyJKKN database
             </p>
           </div>
           {isConfigured && (
@@ -145,7 +139,7 @@ export default function DegreesPage() {
               <div>
                 <p className="text-lg font-semibold text-yellow-800 mb-1">API Not Configured</p>
                 <p className="text-sm text-yellow-700">
-                  {statusMessage}. Please add NEXT_PUBLIC_MYJKKN_API_KEY to your .env.local file to view degrees data.
+                  {statusMessage}. Please add NEXT_PUBLIC_MYJKKN_API_KEY to your .env.local file to view courses data.
                 </p>
               </div>
             </div>
@@ -161,13 +155,13 @@ export default function DegreesPage() {
                 <SearchInput
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, abbreviation, or level..."
+                  placeholder="Search by title, code, or description..."
                 />
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => loadDegrees(currentPage)}
+                onClick={() => loadCourses(currentPage)}
                 disabled={loading}
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,9 +174,9 @@ export default function DegreesPage() {
             {/* Stats */}
             <div className="mb-6 flex items-center gap-2 text-sm text-neutral-600">
               <span className="font-medium text-brand-green">
-                {searchQuery ? filteredDegrees.length : total}
+                {searchQuery ? filteredCourses.length : total}
               </span>
-              {searchQuery ? 'matching' : 'total'} degrees
+              {searchQuery ? 'matching' : 'total'} courses
               {!searchQuery && (
                 <>
                   <span>•</span>
@@ -195,7 +189,7 @@ export default function DegreesPage() {
             {loading && (
               <div className="text-center py-16">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent mb-4"></div>
-                <p className="text-neutral-600 font-medium">Loading degrees...</p>
+                <p className="text-neutral-600 font-medium">Loading courses...</p>
               </div>
             )}
 
@@ -215,26 +209,29 @@ export default function DegreesPage() {
             )}
 
             {/* Data Table */}
-            {!loading && !error && filteredDegrees.length > 0 && (
+            {!loading && !error && filteredCourses.length > 0 && (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-brand-cream border-b-2 border-brand-green">
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Degree Name
+                          Course Title
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Abbreviation
+                          Code
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Level
+                          Description
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
+                          Credit Hours
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
+                          Program ID
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
                           Status
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
-                          Created
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-brand-green">
                           Updated
@@ -242,42 +239,47 @@ export default function DegreesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-200">
-                      {filteredDegrees.map((degree) => (
+                      {filteredCourses.map((course) => (
                         <tr
-                          key={degree.id}
+                          key={course.id}
                           className="hover:bg-brand-cream hover:bg-opacity-50 transition-colors"
                         >
                           <td className="px-4 py-4">
                             <p className="font-medium text-brand-green">
-                              {degree.name || 'N/A'}
+                              {course.title}
                             </p>
                           </td>
                           <td className="px-4 py-4">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-yellow text-brand-green">
-                              {degree.abbreviation || 'N/A'}
+                              {course.code}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-neutral-700 max-w-xs">
+                            <span title={course.description}>
+                              {truncateText(course.description)}
                             </span>
                           </td>
                           <td className="px-4 py-4">
-                            <Badge
-                              variant={getLevelBadgeVariant(degree.level)}
-                              size="sm"
-                            >
-                              {degree.level || 'N/A'}
-                            </Badge>
+                            <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-green">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {course.credit_hours}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-neutral-700 font-mono">
+                            {course.program_id}
                           </td>
                           <td className="px-4 py-4">
                             <Badge
-                              variant={degree.is_active ? 'success' : 'default'}
+                              variant={course.is_active ? 'success' : 'default'}
                               size="sm"
                             >
-                              {degree.is_active ? 'Active' : 'Inactive'}
+                              {course.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </td>
                           <td className="px-4 py-4 text-sm text-neutral-600">
-                            {formatDate(degree.created_at)}
-                          </td>
-                          <td className="px-4 py-4 text-sm text-neutral-600">
-                            {formatDate(degree.updated_at)}
+                            {formatDate(course.updated_at)}
                           </td>
                         </tr>
                       ))}
@@ -289,7 +291,7 @@ export default function DegreesPage() {
                 {!searchQuery && totalPages > 1 && (
                   <div className="mt-6 flex items-center justify-between border-t border-neutral-200 pt-4">
                     <p className="text-sm text-neutral-600">
-                      Showing {degrees.length} of {total} results
+                      Showing {courses.length} of {total} results
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -347,11 +349,11 @@ export default function DegreesPage() {
             )}
 
             {/* Empty State */}
-            {!loading && !error && filteredDegrees.length === 0 && (
+            {!loading && !error && filteredCourses.length === 0 && (
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">🎓</div>
+                <div className="text-6xl mb-4">📚</div>
                 <h3 className="text-xl font-semibold text-brand-green mb-2">
-                  {searchQuery ? 'No matching degrees' : 'No degrees found'}
+                  {searchQuery ? 'No matching courses' : 'No courses found'}
                 </h3>
                 <p className="text-neutral-600">
                   {searchQuery
@@ -373,6 +375,5 @@ export default function DegreesPage() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
   );
 }

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Section, Container } from '@/components/ui/PageLayout';
 import Card from '@/components/ui/Card';
 import Tabs from '@/components/ui/Tabs';
@@ -18,7 +17,7 @@ import ExamResultsTab from './components/ExamResultsTab';
 export default function MentorDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, accessToken, loading: authLoading } = useAuth();
+  const { accessToken } = useAuth();
 
   const mentorId = params.id as string;
   const [mentor, setMentor] = useState<Mentor | null>(null);
@@ -54,51 +53,35 @@ export default function MentorDetailPage() {
     fetchMentor();
   }, [accessToken, mentorId]);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
-
-  // Show nothing while redirecting
-  if (!authLoading && !user) {
-    return null;
-  }
-
   if (loading) {
     return (
-      <DashboardLayout>
-        <Section background="cream">
-          <Container>
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent"></div>
-              <p className="mt-4 text-neutral-600">Loading mentor details...</p>
-            </div>
-          </Container>
-        </Section>
-      </DashboardLayout>
+      <Section background="cream">
+        <Container>
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent"></div>
+            <p className="mt-4 text-neutral-600">Loading mentor details...</p>
+          </div>
+        </Container>
+      </Section>
     );
   }
 
   if (error || !mentor) {
     return (
-      <DashboardLayout>
-        <Section background="cream">
-          <Container>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-              <p className="text-red-700 font-medium">{error || 'Mentor not found'}</p>
-              <Button
-                variant="outline"
-                onClick={() => router.push('/mentor')}
-                className="mt-4"
-              >
-                Back to Mentors
-              </Button>
-            </div>
-          </Container>
-        </Section>
-      </DashboardLayout>
+      <Section background="cream">
+        <Container>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <p className="text-red-700 font-medium">{error || 'Mentor not found'}</p>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/mentor')}
+              className="mt-4"
+            >
+              Back to Mentors
+            </Button>
+          </div>
+        </Container>
+      </Section>
     );
   }
 
@@ -131,8 +114,7 @@ export default function MentorDetailPage() {
   ];
 
   return (
-    <DashboardLayout>
-      <Section spacing="md" background="cream">
+    <Section spacing="md" background="cream">
         <Container>
           {/* Back Button */}
           <Button
@@ -247,6 +229,5 @@ export default function MentorDetailPage() {
           <Tabs tabs={tabs} defaultTab="students" />
         </Container>
       </Section>
-    </DashboardLayout>
   );
 }

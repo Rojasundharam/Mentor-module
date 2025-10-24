@@ -3,7 +3,6 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Section, Container } from '@/components/ui/PageLayout';
 import Tabs from '@/components/ui/Tabs';
 import ApiManagementTab from './components/ApiManagementTab';
@@ -27,14 +26,12 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent mb-4"></div>
-            <p className="text-neutral-600">Loading settings...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent mb-4"></div>
+          <p className="text-neutral-600">Loading settings...</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
@@ -54,8 +51,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <DashboardLayout>
-      <Section spacing="md" background="cream">
+    <Section spacing="md" background="cream">
         <Container>
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-brand-green mb-2">
@@ -69,6 +65,5 @@ export default function SettingsPage() {
           <Tabs tabs={tabs} defaultTab="api-management" />
         </Container>
       </Section>
-    </DashboardLayout>
   );
 }
