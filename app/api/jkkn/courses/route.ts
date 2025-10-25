@@ -2,19 +2,99 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Transform MyJKKN API course response to match our interface
+ * Uses defensive coding to handle various field name conventions and missing data
  */
-function transformCourseData(apiCourse: any) {
-  return {
-    id: apiCourse.id || apiCourse.course_id,
-    title: apiCourse.title || apiCourse.course_title || apiCourse.name || apiCourse.course_name || 'Unnamed Course',
-    code: apiCourse.code || apiCourse.course_code || apiCourse.courseCode || '',
-    description: apiCourse.description || apiCourse.course_description || '',
-    credit_hours: apiCourse.credit_hours || apiCourse.creditHours || apiCourse.credits || 0,
-    program_id: apiCourse.program_id || apiCourse.programId || '',
-    is_active: apiCourse.is_active ?? apiCourse.isActive ?? apiCourse.active ?? true,
-    created_at: apiCourse.created_at || apiCourse.createdAt || new Date().toISOString(),
-    updated_at: apiCourse.updated_at || apiCourse.updatedAt || new Date().toISOString(),
-  };
+function transformCourseData(apiCourse: any, index?: number) {
+  try {
+    // Validate input
+    if (!apiCourse || typeof apiCourse !== 'object') {
+      console.warn('[transformCourseData] Invalid course data at index', index, ':', apiCourse);
+      return null;
+    }
+
+    // Extract ID with multiple fallbacks
+    const id = apiCourse.id
+      || apiCourse.course_id
+      || apiCourse.courseId
+      || apiCourse._id
+      || `course-${index || 'unknown'}`;
+
+    // Extract title with multiple fallbacks
+    const title = apiCourse.title
+      || apiCourse.course_title
+      || apiCourse.name
+      || apiCourse.course_name
+      || apiCourse.courseName
+      || 'Unnamed Course';
+
+    // Extract code with multiple fallbacks
+    const code = apiCourse.code
+      || apiCourse.course_code
+      || apiCourse.courseCode
+      || apiCourse.subject_code
+      || '';
+
+    // Extract description with multiple fallbacks
+    const description = apiCourse.description
+      || apiCourse.course_description
+      || apiCourse.courseDescription
+      || apiCourse.details
+      || '';
+
+    // Extract credit hours with multiple fallbacks and type conversion
+    const credit_hours = Number(
+      apiCourse.credit_hours
+      || apiCourse.creditHours
+      || apiCourse.credits
+      || apiCourse.credit
+      || 0
+    );
+
+    // Extract program_id with multiple fallbacks
+    const program_id = apiCourse.program_id
+      || apiCourse.programId
+      || apiCourse.programme_id
+      || apiCourse.programmeId
+      || '';
+
+    // Extract is_active with proper boolean handling
+    const is_active = apiCourse.is_active !== undefined
+      ? Boolean(apiCourse.is_active)
+      : apiCourse.isActive !== undefined
+      ? Boolean(apiCourse.isActive)
+      : apiCourse.active !== undefined
+      ? Boolean(apiCourse.active)
+      : true;
+
+    // Extract timestamps with fallbacks
+    const created_at = apiCourse.created_at
+      || apiCourse.createdAt
+      || apiCourse.created
+      || new Date().toISOString();
+
+    const updated_at = apiCourse.updated_at
+      || apiCourse.updatedAt
+      || apiCourse.updated
+      || apiCourse.modified_at
+      || new Date().toISOString();
+
+    return {
+      id,
+      title,
+      code,
+      description,
+      credit_hours,
+      program_id,
+      is_active,
+      created_at,
+      updated_at,
+    };
+  } catch (error: any) {
+    console.error('[transformCourseData] Error transforming course at index', index, ':', error.message);
+    console.error('[transformCourseData] Problem course data:', apiCourse);
+    // Return null for invalid courses, will be filtered out later
+    return null;
+  }
 }
 
 /**
@@ -31,7 +111,12 @@ export async function GET(request: NextRequest) {
     const apiKey = process.env.NEXT_PUBLIC_MYJKKN_API_KEY;
     const baseUrl = process.env.NEXT_PUBLIC_MYJKKN_BASE_URL || 'https://www.jkkn.ai/api';
 
+    console.log('[Courses API] Starting request...');
+    console.log('[Courses API] Base URL:', baseUrl);
+    console.log('[Courses API] API Key configured:', !!apiKey);
+
     if (!apiKey) {
+      console.error('[Courses API] API key not configured');
       return NextResponse.json(
         {
           success: false,
@@ -46,60 +131,156 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
 
-    // Call JKKN API
-    const url = `${baseUrl}/api-management/organizations/courses?page=${page}&limit=${limit}`;
+    // Try multiple endpoint patterns for courses
+    // Pattern 1: Under organizations (like institutions, departments, programs, degrees)
+    // Pattern 2: Direct endpoint (like students, staff)
+    const endpoints = [
+      `${baseUrl}/api-management/courses?page=${page}&limit=${limit}`,
+      `${baseUrl}/api-management/organizations/courses?page=${page}&limit=${limit}`,
+    ];
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      // Add cache control for better performance
-      next: { revalidate: 60 }, // Cache for 60 seconds
-    });
+    let response;
+    let lastError: any = null;
+    let successfulUrl: string | null = null;
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+    // Try each endpoint pattern
+    for (const url of endpoints) {
+      try {
+        console.log('[Courses API] Trying endpoint:', url);
 
+        response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          // Add cache control for better performance
+          next: { revalidate: 60 }, // Cache for 60 seconds
+        });
+
+        console.log('[Courses API] Response status:', response.status);
+        console.log('[Courses API] Response ok:', response.ok);
+
+        // If successful, break and use this endpoint
+        if (response.ok) {
+          successfulUrl = url;
+          console.log('[Courses API] Success with endpoint:', url);
+          break;
+        }
+
+        // Store the error for potential later use
+        lastError = {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+        };
+
+        console.log('[Courses API] Endpoint failed:', lastError);
+      } catch (fetchError: any) {
+        lastError = {
+          url,
+          error: fetchError.message,
+        };
+        console.error('[Courses API] Fetch error for', url, ':', fetchError);
+        // Continue to next endpoint
+      }
+    }
+
+    // If no endpoint worked, return error
+    if (!response || !response.ok) {
+      console.error('[Courses API] All endpoints failed. Last error:', lastError);
       return NextResponse.json(
         {
           success: false,
-          error: errorData.message || `JKKN API Error: ${response.statusText}`,
-          status: response.status,
+          error: `Could not connect to JKKN courses API`,
+          details: `Tried multiple endpoint patterns. The courses endpoint may not exist. Last error: ${JSON.stringify(lastError)}`,
+          attemptedEndpoints: endpoints,
         },
-        { status: response.status }
+        { status: 500 }
       );
     }
 
-    const data = await response.json();
+    // Parse response data
+    let data;
+    try {
+      data = await response.json();
+      console.log('[Courses API] Raw response data structure:', {
+        hasData: !!data.data,
+        dataType: Array.isArray(data.data) ? 'array' : typeof data.data,
+        dataLength: data.data?.length,
+        hasMetadata: !!data.metadata,
+        topLevelKeys: Object.keys(data),
+      });
 
-    // Debug: Log the actual API response to see field names
-    console.log('Courses API Response:', JSON.stringify(data, null, 2));
-    if (data.data && data.data.length > 0) {
-      console.log('First course object:', JSON.stringify(data.data[0], null, 2));
+      // Debug: Log the actual API response to see field names
+      if (data.data && data.data.length > 0) {
+        console.log('[Courses API] First course object keys:', Object.keys(data.data[0]));
+        console.log('[Courses API] First course object:', JSON.stringify(data.data[0], null, 2));
+      }
+    } catch (parseError: any) {
+      console.error('[Courses API] Error parsing response JSON:', parseError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid JSON response from JKKN API',
+          details: parseError.message,
+        },
+        { status: 500 }
+      );
     }
 
-    // Transform the data to match our interface
-    const transformedData = {
-      ...data,
-      data: data.data ? data.data.map(transformCourseData) : []
-    };
+    // Transform the data to match our interface with error handling
+    let transformedData;
+    try {
+      const rawCourses = data.data || [];
+      console.log('[Courses API] Transforming', rawCourses.length, 'courses...');
 
-    console.log('Transformed course data:', JSON.stringify(transformedData.data[0], null, 2));
+      // Transform and filter out null values (failed transformations)
+      const transformedCourses = rawCourses
+        .map((course: any, index: number) => transformCourseData(course, index))
+        .filter((course: any) => course !== null);
 
+      const failedCount = rawCourses.length - transformedCourses.length;
+      if (failedCount > 0) {
+        console.warn('[Courses API]', failedCount, 'courses failed transformation');
+      }
+
+      transformedData = {
+        ...data,
+        data: transformedCourses
+      };
+
+      if (transformedData.data && transformedData.data.length > 0) {
+        console.log('[Courses API] First transformed course:', JSON.stringify(transformedData.data[0], null, 2));
+      }
+      console.log('[Courses API] Successfully transformed', transformedData.data?.length || 0, 'courses');
+    } catch (transformError: any) {
+      console.error('[Courses API] Error during data transformation:', transformError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Error transforming course data',
+          details: transformError.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log('[Courses API] Request successful');
     return NextResponse.json({
       success: true,
       ...transformedData,
     });
 
   } catch (error: any) {
-    console.error('Error fetching courses:', error);
+    console.error('[Courses API] Unexpected error:', error);
+    console.error('[Courses API] Error stack:', error.stack);
 
     return NextResponse.json(
       {
         success: false,
         error: error.message || 'Failed to fetch courses',
+        details: 'An unexpected error occurred while processing the courses request',
       },
       { status: 500 }
     );

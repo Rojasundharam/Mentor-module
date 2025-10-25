@@ -218,21 +218,32 @@ export async function checkApiStatus(): Promise<{
   message: string;
 }> {
   try {
+    console.log('[checkApiStatus] Checking API configuration...');
     const response = await fetch('/api/jkkn/institutions?page=1&limit=1');
     const result = await response.json();
 
+    console.log('[checkApiStatus] Response:', {
+      status: response.status,
+      ok: response.ok,
+      success: result.success,
+      error: result.error,
+    });
+
     if (response.ok && result.success) {
+      console.log('[checkApiStatus] API is configured');
       return {
         configured: true,
         message: 'API connected successfully',
       };
     }
 
+    console.warn('[checkApiStatus] API not configured:', result.error);
     return {
       configured: false,
       message: result.error || 'API not configured',
     };
   } catch (error: any) {
+    console.error('[checkApiStatus] Error checking API:', error);
     return {
       configured: false,
       message: error.message || 'Connection failed',
@@ -377,6 +388,8 @@ export async function fetchPrograms(
   limit: number = 10
 ): Promise<PaginatedResponse<Program>> {
   try {
+    console.log(`[fetchPrograms] Fetching page ${page}, limit ${limit}`);
+
     const response = await fetch(
       `/api/jkkn/programs?page=${page}&limit=${limit}`,
       {
@@ -387,8 +400,11 @@ export async function fetchPrograms(
       }
     );
 
+    console.log(`[fetchPrograms] Response status: ${response.status}`);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('[fetchPrograms] Error response:', errorData);
       throw {
         message: errorData.error || `API Error: ${response.statusText}`,
         status: response.status,
@@ -397,19 +413,33 @@ export async function fetchPrograms(
     }
 
     const result = await response.json();
+    console.log('[fetchPrograms] Response data:', {
+      success: result.success,
+      dataLength: result.data?.length,
+      metadata: result.metadata,
+    });
 
     if (!result.success) {
+      console.error('[fetchPrograms] API returned success=false:', result.error);
       throw {
         message: result.error || 'Failed to fetch programs',
         status: response.status,
       } as ApiError;
     }
 
-    return {
+    const returnData = {
       data: result.data || [],
       metadata: result.metadata || { page: 1, totalPages: 1, total: 0 },
     };
+
+    console.log('[fetchPrograms] Returning data:', {
+      programCount: returnData.data.length,
+      metadata: returnData.metadata,
+    });
+
+    return returnData;
   } catch (error: any) {
+    console.error('[fetchPrograms] Caught error:', error);
     if (error.message && error.status) {
       throw error; // Already formatted error
     }
@@ -757,6 +787,8 @@ export async function fetchStaff(
   limit: number = 10
 ): Promise<PaginatedResponse<StaffMember>> {
   try {
+    console.log(`[fetchStaff] Fetching page ${page}, limit ${limit}`);
+
     const response = await fetch(
       `/api/jkkn/staff?page=${page}&limit=${limit}`,
       {
@@ -767,8 +799,11 @@ export async function fetchStaff(
       }
     );
 
+    console.log(`[fetchStaff] Response status: ${response.status}`);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('[fetchStaff] Error response:', errorData);
       throw {
         message: errorData.error || `API Error: ${response.statusText}`,
         status: response.status,
@@ -777,19 +812,33 @@ export async function fetchStaff(
     }
 
     const result = await response.json();
+    console.log('[fetchStaff] Response data:', {
+      success: result.success,
+      dataLength: result.data?.length,
+      metadata: result.metadata,
+    });
 
     if (!result.success) {
+      console.error('[fetchStaff] API returned success=false:', result.error);
       throw {
         message: result.error || 'Failed to fetch staff',
         status: response.status,
       } as ApiError;
     }
 
-    return {
+    const returnData = {
       data: result.data || [],
       metadata: result.metadata || { page: 1, totalPages: 1, total: 0 },
     };
+
+    console.log('[fetchStaff] Returning data:', {
+      staffCount: returnData.data.length,
+      metadata: returnData.metadata,
+    });
+
+    return returnData;
   } catch (error: any) {
+    console.error('[fetchStaff] Caught error:', error);
     if (error.message && error.status) {
       throw error; // Already formatted error
     }

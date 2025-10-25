@@ -50,3 +50,6 @@ export function useToastNotification() {
   }
   return context;
 }
+
+// Export alias for convenience
+export { useToastNotification as useToast };

@@ -8,14 +8,14 @@ interface BadgeProps {
 }
 
 /**
- * Badge Component
+ * Professional Badge Component
  *
  * A badge/tag component for status indicators and labels.
- * Follows the brand design system.
+ * Uses subtle, professional colors suitable for institutional design.
  *
  * @param children - Badge content
- * @param variant - Color variant
- * @param size - Size variant
+ * @param variant - Color variant (default, success, warning, error, info)
+ * @param size - Size variant (sm, md, lg)
  * @param className - Additional custom classes
  */
 export default function Badge({
@@ -24,12 +24,13 @@ export default function Badge({
   size = 'md',
   className = ''
 }: BadgeProps) {
+  // Professional badge variants with subtle colors
   const variants = {
-    default: 'bg-neutral-100 text-neutral-700 border border-neutral-300',
-    success: 'bg-primary-100 text-brand-green border border-brand-green',
-    warning: 'bg-accent-100 text-accent-800 border border-accent-500',
-    error: 'bg-red-100 text-red-700 border border-red-300',
-    info: 'bg-blue-100 text-blue-700 border border-blue-300'
+    default: 'bg-neutral-100 text-neutral-700',
+    success: 'bg-neutral-50 text-black border border-neutral-200',
+    warning: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
+    error: 'bg-red-50 text-red-700 border border-red-200',
+    info: 'bg-blue-50 text-blue-700 border border-blue-200'
   };
 
   const sizes = {
@@ -41,7 +42,7 @@ export default function Badge({
   return (
     <span
       className={`
-        inline-flex items-center font-semibold rounded-full
+        inline-flex items-center font-medium rounded-full
         ${variants[variant]} ${sizes[size]} ${className}
       `}
     >

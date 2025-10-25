@@ -249,7 +249,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false }: Sideba
         className={`
           fixed top-0 left-0 z-50 h-full
           ${isCollapsed ? 'lg:w-20' : 'w-80'}
-          bg-brand-cream border-r-2 border-brand-green
+          bg-brand-cream border-r border-neutral-200 shadow-sm
           transform transition-all duration-300 ease-in-out
           lg:translate-x-0 lg:fixed
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -258,7 +258,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false }: Sideba
         aria-label="Main navigation"
       >
         {/* Header */}
-        <div className={`border-b-2 border-brand-green ${isCollapsed ? 'lg:p-3' : 'p-6'} transition-all duration-300`}>
+        <div className={`border-b border-neutral-200 ${isCollapsed ? 'lg:p-3' : 'p-6'} transition-all duration-300`}>
           <div className={`flex items-center ${isCollapsed ? 'lg:justify-center' : 'justify-between'} mb-4`}>
             <h1 className={`text-2xl font-bold text-brand-green flex items-center gap-2 ${isCollapsed ? 'lg:gap-0' : ''}`}>
               <span>🎓</span>
@@ -416,7 +416,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed = false }: Sideba
         </nav>
 
         {/* Footer - Logout */}
-        <div className={`border-t-2 border-brand-green ${isCollapsed ? 'lg:p-2' : 'p-4'} transition-all duration-300`}>
+        <div className={`border-t border-neutral-200 ${isCollapsed ? 'lg:p-2' : 'p-4'} transition-all duration-300`}>
           <button
             onClick={handleLogout}
             className={`

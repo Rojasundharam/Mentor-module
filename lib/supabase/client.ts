@@ -158,6 +158,18 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['counseling_sessions']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['counseling_sessions']['Insert']>;
       };
+      session_feedback: {
+        Row: {
+          id: string;
+          session_id: string;
+          counseling_queries: string;
+          action_taken: string;
+          submitted_by: string | null;
+          submitted_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['session_feedback']['Row'], 'id' | 'submitted_at'>;
+        Update: Partial<Database['public']['Tables']['session_feedback']['Insert']>;
+      };
     };
   };
 };

@@ -38,60 +38,40 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-brand-cream">
-      {/* Decorative background elements */}
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-subtle">
+      {/* Professional background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Large decorative circles */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-accent-200 rounded-full opacity-30 blur-3xl animate-pulse-slow"></div>
-        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-primary-200 rounded-full opacity-20 blur-3xl"></div>
-
-        {/* Floating education icons background */}
-        <div className="absolute top-20 left-[10%] text-primary-300 opacity-20">
-          <svg className="w-16 h-16 animate-float-slow" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
-          </svg>
-        </div>
-        <div className="absolute top-32 right-[15%] text-accent-400 opacity-25">
-          <svg className="w-12 h-12 animate-float" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 10h7c-.53 4.12-3.28 7.79-7 8.94V12H5V7.89l7-3.11V12z"/>
-          </svg>
-        </div>
-        <div className="absolute bottom-24 left-[20%] text-primary-300 opacity-15">
-          <svg className="w-20 h-20 animate-float-delayed" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
-          </svg>
-        </div>
+        {/* Subtle decorative circles */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary-100 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-primary-50 rounded-full opacity-15 blur-3xl"></div>
       </div>
 
       {/* Subtle grid pattern */}
-      <div className="absolute inset-0 opacity-[0.03]"
+      <div className="absolute inset-0 opacity-[0.02]"
            style={{
              backgroundImage: `linear-gradient(var(--color-brand-green) 1px, transparent 1px),
                               linear-gradient(90deg, var(--color-brand-green) 1px, transparent 1px)`,
-             backgroundSize: '30px 30px'
+             backgroundSize: '40px 40px'
            }}>
       </div>
 
       {/* Main login card */}
       <div className="relative w-full max-w-md mx-4 animate-fadeIn">
-        {/* Card container with shadow */}
-        <div className="relative bg-white rounded-3xl shadow-2xl border-2 border-brand-green p-8 sm:p-12">
-          {/* Accent top border */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-yellow px-8 py-2 rounded-full shadow-lg">
-            <p className="text-sm font-bold text-brand-green tracking-wider">EDUCATION PORTAL</p>
+        {/* Card container with professional shadow */}
+        <div className="relative bg-white rounded-2xl shadow-elevated border-t-4 border-t-brand-green p-6 sm:p-8 lg:p-6">
+          {/* Professional top badge */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-green px-8 py-2 rounded-lg shadow-professional">
+            <p className="text-sm font-semibold text-white tracking-wide">EDUCATION PORTAL</p>
           </div>
 
           <div className="relative z-10 mt-4">
             {/* Logo/Icon area */}
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-6 lg:mb-4">
               <div className="relative">
-                {/* Pulsing ring effect */}
-                <div className="absolute inset-0 rounded-full bg-brand-yellow animate-ping opacity-20"></div>
-
                 {/* Icon container - Graduation cap for education */}
-                <div className="relative bg-brand-green p-5 rounded-2xl shadow-xl">
+                <div className="relative bg-gradient-primary p-4 lg:p-3 rounded-xl shadow-elevated">
                   <svg
-                    className="w-14 h-14 text-brand-cream"
+                    className="w-14 h-14 lg:w-10 lg:h-10 text-white"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg"
@@ -103,26 +83,26 @@ export default function LoginPage() {
             </div>
 
             {/* Title section */}
-            <div className="text-center mb-10">
-              <h1 className="text-4xl sm:text-5xl font-bold mb-3 text-brand-green">
+            <div className="text-center mb-6 lg:mb-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-3xl font-semibold mb-3 lg:mb-2 text-neutral-900">
                 Mentor Module
               </h1>
-              <p className="text-gray-700 text-lg font-medium mb-2">
-                Welcome to Learning
+              <p className="text-neutral-700 text-lg lg:text-base font-medium mb-2 lg:mb-1">
+                JKKN College of Engineering
               </p>
-              <p className="text-gray-600 text-sm">
-                Sign in with your MyJKKN account to access your courses
+              <p className="text-neutral-600 text-sm">
+                Sign in with your MyJKKN account to continue
               </p>
             </div>
 
             {/* Login button */}
             <button
               onClick={login}
-              className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-brand-yellow hover:bg-accent-400 text-brand-green font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] overflow-hidden border-2 border-brand-green"
+              className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 lg:py-3 bg-brand-green hover:bg-primary-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-professional hover:shadow-elevated active:scale-[0.98] overflow-hidden"
               aria-label="Sign in with MyJKKN account"
             >
               {/* Button shimmer effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
 
               {/* Key Icon */}
               <svg
@@ -160,37 +140,37 @@ export default function LoginPage() {
             </button>
 
             {/* Educational Features */}
-            <div className="mt-10 grid grid-cols-3 gap-4">
+            <div className="mt-8 lg:mt-6 grid grid-cols-3 gap-4 lg:gap-3">
               <div className="text-center group cursor-default">
-                <div className="w-12 h-12 mx-auto mb-3 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200 border border-primary-300">
-                  <svg className="w-6 h-6 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <div className="w-12 h-12 lg:w-10 lg:h-10 mx-auto mb-2 lg:mb-1.5 bg-gradient-primary-light rounded-lg flex items-center justify-center group-hover:bg-neutral-100 transition-colors duration-200">
+                  <svg className="w-6 h-6 lg:w-5 lg:h-5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <p className="text-xs text-gray-700 font-semibold">Interactive Learning</p>
+                <p className="text-xs text-neutral-700 font-medium">Interactive Learning</p>
               </div>
 
               <div className="text-center group cursor-default">
-                <div className="w-12 h-12 mx-auto mb-3 bg-accent-100 rounded-xl flex items-center justify-center group-hover:bg-accent-200 transition-colors duration-200 border border-accent-400">
-                  <svg className="w-6 h-6 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <div className="w-12 h-12 lg:w-10 lg:h-10 mx-auto mb-2 lg:mb-1.5 bg-gradient-primary-light rounded-lg flex items-center justify-center group-hover:bg-neutral-100 transition-colors duration-200">
+                  <svg className="w-6 h-6 lg:w-5 lg:h-5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <p className="text-xs text-gray-700 font-semibold">Expert Mentors</p>
+                <p className="text-xs text-neutral-700 font-medium">Expert Mentors</p>
               </div>
 
               <div className="text-center group cursor-default">
-                <div className="w-12 h-12 mx-auto mb-3 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200 border border-primary-300">
-                  <svg className="w-6 h-6 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <div className="w-12 h-12 lg:w-10 lg:h-10 mx-auto mb-2 lg:mb-1.5 bg-gradient-primary-light rounded-lg flex items-center justify-center group-hover:bg-neutral-100 transition-colors duration-200">
+                  <svg className="w-6 h-6 lg:w-5 lg:h-5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                   </svg>
                 </div>
-                <p className="text-xs text-gray-700 font-semibold">Certified Courses</p>
+                <p className="text-xs text-neutral-700 font-medium">Quality Education</p>
               </div>
             </div>
 
             {/* Footer text */}
-            <p className="mt-8 text-center text-xs text-gray-600">
+            <p className="mt-6 lg:mt-4 text-center text-xs text-neutral-600">
               By signing in, you agree to our{' '}
               <a href="#" className="text-brand-green hover:text-primary-700 underline font-medium transition-colors">
                 Terms of Service
@@ -204,72 +184,15 @@ export default function LoginPage() {
         </div>
 
         {/* Powered by badge */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-700 flex items-center justify-center gap-2">
+        <div className="mt-4 lg:mt-3 text-center">
+          <p className="text-sm text-neutral-700 flex items-center justify-center gap-2">
             <span>Powered by</span>
-            <span className="font-bold text-brand-green">
+            <span className="font-semibold text-brand-green">
               MyJKKN
             </span>
           </p>
         </div>
       </div>
-
-      {/* Custom CSS for animations */}
-      <style jsx>{`
-        @keyframes pulse-slow {
-          0%, 100% {
-            opacity: 0.3;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-
-        @keyframes float-slow {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-20px) rotate(5deg);
-          }
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-15px) rotate(-3deg);
-          }
-        }
-
-        @keyframes float-delayed {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-25px) rotate(8deg);
-          }
-        }
-
-        .animate-pulse-slow {
-          animation: pulse-slow 4s ease-in-out infinite;
-        }
-
-        .animate-float-slow {
-          animation: float-slow 6s ease-in-out infinite;
-        }
-
-        .animate-float {
-          animation: float 5s ease-in-out infinite;
-          animation-delay: 1s;
-        }
-
-        .animate-float-delayed {
-          animation: float-delayed 7s ease-in-out infinite;
-          animation-delay: 2s;
-        }
-      `}</style>
     </div>
   );
 }

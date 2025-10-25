@@ -1,233 +1,259 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, User, Users, MessageSquare, Calendar, FileText } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { Section, Container } from '@/components/ui/PageLayout';
-import Card from '@/components/ui/Card';
-import Tabs from '@/components/ui/Tabs';
-import Badge from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
-import type { Mentor } from '@/lib/types/mentor';
-import StudentsTab from './components/StudentsTab';
 import CounselingTab from './components/CounselingTab';
+import StudentsTab from './components/StudentsTab';
 import AttendanceTab from './components/AttendanceTab';
 import ExamResultsTab from './components/ExamResultsTab';
+
+interface Mentor {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  department: string;
+  designation: string;
+  avatar?: string | null;
+  totalStudents: number;
+}
+
+type TabType = 'students' | 'counseling' | 'attendance' | 'examResults';
 
 export default function MentorDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { accessToken } = useAuth();
-
+  const { user, accessToken } = useAuth();
   const mentorId = params.id as string;
+
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('students');
 
   // Fetch mentor details
   useEffect(() => {
-    if (!accessToken || !mentorId) return;
-
-    const fetchMentor = async () => {
+    const fetchMentorDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/mentor/${mentorId}`, {
+        setError(null);
+
+        if (!accessToken) {
+          router.push('/login');
+          return;
+        }
+
+        // Fetch mentor basic info from list endpoint (filter by ID)
+        const mentorResponse = await fetch(`/api/mentor/list?search=${mentorId}`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
           },
         });
 
-        if (!response.ok) {
+        if (!mentorResponse.ok) {
           throw new Error('Failed to fetch mentor details');
         }
 
-        const data = await response.json();
-        setMentor(data.mentor);
+        const mentorData = await mentorResponse.json();
+
+        if (mentorData.success && mentorData.mentors && mentorData.mentors.length > 0) {
+          const foundMentor = mentorData.mentors.find((m: Mentor) => m.id === mentorId);
+          if (foundMentor) {
+            setMentor(foundMentor);
+          } else {
+            throw new Error('Mentor not found');
+          }
+        } else {
+          throw new Error('Mentor not found');
+        }
+
+
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load mentor');
+        console.error('Error fetching mentor details:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load mentor details');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMentor();
-  }, [accessToken, mentorId]);
+    if (mentorId && accessToken) {
+      fetchMentorDetails();
+    }
+  }, [mentorId, accessToken, router]);
+
+  // Get mentor initials for avatar
+  const getInitials = (name: string) => {
+    if (!name) return '?';
+    return name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2);
+  };
 
   if (loading) {
     return (
-      <Section background="cream">
-        <Container>
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-green border-t-transparent"></div>
-            <p className="mt-4 text-neutral-600">Loading mentor details...</p>
-          </div>
-        </Container>
-      </Section>
+      <div className="min-h-screen bg-brand-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brand-green mx-auto mb-4"></div>
+          <p className="text-brand-green font-semibold">Loading mentor details...</p>
+        </div>
+      </div>
     );
   }
 
   if (error || !mentor) {
     return (
-      <Section background="cream">
-        <Container>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-700 font-medium">{error || 'Mentor not found'}</p>
-            <Button
-              variant="outline"
+      <div className="min-h-screen bg-brand-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-100 border-2 border-red-500 rounded-lg p-6 max-w-md">
+            <p className="text-red-700 font-semibold mb-4">{error || 'Mentor not found'}</p>
+            <button
               onClick={() => router.push('/mentor')}
-              className="mt-4"
+              className="px-4 py-2 bg-brand-green text-white rounded-lg hover:bg-green-700 transition"
             >
               Back to Mentors
-            </Button>
+            </button>
           </div>
-        </Container>
-      </Section>
+        </div>
+      </div>
     );
   }
 
   const tabs = [
-    {
-      id: 'students',
-      label: 'Students',
-      icon: '👥',
-      badge: mentor.totalStudents,
-      content: <StudentsTab mentorId={mentorId} />
-    },
-    {
-      id: 'counseling',
-      label: 'Counseling',
-      icon: '💬',
-      content: <CounselingTab mentorId={mentorId} />
-    },
-    {
-      id: 'attendance',
-      label: 'Attendance',
-      icon: '📅',
-      content: <AttendanceTab mentorId={mentorId} />
-    },
-    {
-      id: 'exam-results',
-      label: 'Exam Results',
-      icon: '📊',
-      content: <ExamResultsTab mentorId={mentorId} />
-    }
+    { id: 'students' as TabType, label: 'Students', icon: Users },
+    { id: 'counseling' as TabType, label: 'Counseling', icon: MessageSquare },
+    { id: 'attendance' as TabType, label: 'Attendance', icon: Calendar },
+    { id: 'examResults' as TabType, label: 'Exam Results', icon: FileText },
   ];
 
   return (
-    <Section spacing="md" background="cream">
-        <Container>
-          {/* Back Button */}
-          <Button
-            variant="outline"
-            size="sm"
+    <div className="min-h-screen bg-brand-cream p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header with Back Button */}
+        <div className="mb-6">
+          <button
             onClick={() => router.push('/mentor')}
-            className="mb-6"
+            className="flex items-center gap-2 text-brand-green hover:text-green-700 transition mb-4"
           >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back to Mentors
-          </Button>
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-semibold">Back to Mentors</span>
+          </button>
+        </div>
 
-          {/* Mentor Profile Card */}
-          <Card variant="bordered" className="mb-8">
-            <div className="flex flex-col md:flex-row items-start gap-6">
+        {/* Mentor Profile Header */}
+        <div className="bg-white rounded-xl shadow-lg border-2 border-brand-green p-6 mb-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-6">
               {/* Avatar */}
-              <div className="flex-shrink-0">
+              <div className="w-24 h-24 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-3xl font-bold border-4 border-brand-green shadow-lg flex-shrink-0">
                 {mentor.avatar ? (
-                  <img
-                    src={mentor.avatar}
-                    alt={mentor.name}
-                    className="w-24 h-24 rounded-full object-cover border-4 border-brand-green"
-                  />
+                  <img src={mentor.avatar} alt={mentor.name} className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-4xl font-bold border-4 border-brand-green">
-                    {mentor.name.charAt(0).toUpperCase()}
-                  </div>
+                  getInitials(mentor.name)
                 )}
               </div>
 
-              {/* Mentor Details */}
+              {/* Mentor Info */}
               <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                  <div>
-                    <h1 className="text-3xl font-bold text-brand-green mb-2">
-                      {mentor.name}
-                    </h1>
-                    <p className="text-lg text-neutral-600 mb-3">
+                <h1 className="text-3xl font-bold text-brand-green mb-2">{mentor.name}</h1>
+                <div className="space-y-1 text-gray-700">
+                  <p className="text-lg">
+                    <span className="font-semibold">Staff ID:</span> {mentor.id}
+                  </p>
+                  <p className="text-lg">
+                    <span className="font-semibold">Department:</span> {mentor.department}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="px-4 py-1 bg-brand-green text-white rounded-full text-sm font-semibold">
                       {mentor.designation}
-                    </p>
-                    <Badge variant="info">
-                      {mentor.department}
-                    </Badge>
+                    </span>
                   </div>
-
-                  {mentor.totalStudents !== undefined && (
-                    <div className="text-center bg-brand-cream border-2 border-brand-green rounded-lg px-6 py-3">
-                      <div className="text-3xl font-bold text-brand-green">
-                        {mentor.totalStudents}
-                      </div>
-                      <div className="text-sm text-neutral-600">
-                        Total Students
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-neutral-600">
-                  <div className="flex items-center gap-3">
-                    <svg
-                      className="w-5 h-5 text-brand-green flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <span>{mentor.email}</span>
-                  </div>
-
-                  {mentor.phone && (
-                    <div className="flex items-center gap-3">
-                      <svg
-                        className="w-5 h-5 text-brand-green flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                        />
-                      </svg>
-                      <span>{mentor.phone}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
-          </Card>
 
-          {/* Tabs */}
-          <Tabs tabs={tabs} defaultTab="students" />
-        </Container>
-      </Section>
+            {/* View Profile Button */}
+            <button className="px-6 py-2 bg-brand-green text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center gap-2">
+              <User className="w-4 h-4" />
+              View profile
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Students Assigned Card */}
+          <div className="bg-white rounded-xl shadow-lg border-2 border-brand-yellow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 font-semibold mb-2">Students Assigned</p>
+                <p className="text-4xl font-bold text-brand-green">{mentor.totalStudents || 0}</p>
+              </div>
+              <div className="w-16 h-16 bg-brand-yellow rounded-full flex items-center justify-center">
+                <Users className="w-8 h-8 text-brand-green" />
+              </div>
+            </div>
+          </div>
+
+          {/* Pending Feedback Card */}
+          <div className="bg-white rounded-xl shadow-lg border-2 border-brand-yellow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 font-semibold mb-2">Pending Feedback</p>
+                <p className="text-4xl font-bold text-brand-green">0</p>
+              </div>
+              <div className="w-16 h-16 bg-brand-yellow rounded-full flex items-center justify-center">
+                <MessageSquare className="w-8 h-8 text-brand-green" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Navigation */}
+        <div className="bg-white rounded-t-xl shadow-lg border-2 border-b-0 border-brand-green">
+          <div className="flex border-b-2 border-gray-200">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-4 font-semibold transition ${
+                    activeTab === tab.id
+                      ? 'border-b-4 border-brand-green text-brand-green bg-brand-cream'
+                      : 'text-gray-600 hover:text-brand-green hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {/* Students Tab */}
+            {activeTab === 'students' && (
+              <StudentsTab mentorId={mentorId} />
+            )}
+
+            {/* Counseling Tab */}
+            {activeTab === 'counseling' && (
+              <CounselingTab mentorId={mentorId} />
+            )}
+
+            {/* Attendance Tab */}
+            {activeTab === 'attendance' && (
+              <AttendanceTab mentorId={mentorId} />
+            )}
+
+            {/* Exam Results Tab */}
+            {activeTab === 'examResults' && (
+              <ExamResultsTab mentorId={mentorId} />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

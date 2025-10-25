@@ -15,7 +15,7 @@ const mentorStudents: Record<string, string[]> = {
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; studentId: string } }
+  { params }: { params: Promise<{ id: string; studentId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -28,7 +28,7 @@ export async function DELETE(
       );
     }
 
-    const { id: mentorId, studentId } = params;
+    const { id: mentorId, studentId } = await params;
 
     if (!mentorStudents[mentorId]) {
       return NextResponse.json(

@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useToast } from '@/components/providers/ToastProvider';
+import useConfirm from '@/lib/hooks/useConfirm';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import SearchInput from '@/components/ui/SearchInput';
 import Modal, { ModalFooter } from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import type { Student } from '@/lib/types/mentor';
 
 interface StudentsTabProps {
@@ -15,6 +18,8 @@ interface StudentsTabProps {
 
 export default function StudentsTab({ mentorId }: StudentsTabProps) {
   const { accessToken } = useAuth();
+  const { toast } = useToast();
+  const { ConfirmationDialog, confirm } = useConfirm();
 
   const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,9 +48,11 @@ export default function StudentsTab({ mentorId }: StudentsTabProps) {
         if (response.ok) {
           const data = await response.json();
           setAssignedStudents(data.students || []);
+        } else {
+          toast.error('Failed to load students', 'Could not fetch assigned students');
         }
       } catch (error) {
-        console.error('Failed to fetch students:', error);
+        toast.error('Error loading students', 'An unexpected error occurred');
       } finally {
         setLoading(false);
       }
@@ -77,9 +84,11 @@ export default function StudentsTab({ mentorId }: StudentsTabProps) {
           (s: Student) => !assignedIds.includes(s.id)
         );
         setSearchResults(available);
+      } else {
+        toast.error('Search failed', 'Could not search for students');
       }
     } catch (error) {
-      console.error('Search failed:', error);
+      toast.error('Search error', 'An unexpected error occurred while searching');
     } finally {
       setSearching(false);
     }
@@ -103,14 +112,18 @@ export default function StudentsTab({ mentorId }: StudentsTabProps) {
       if (response.ok) {
         // Add to assigned students list
         setAssignedStudents([...assignedStudents, selectedStudent]);
+        toast.success('Student assigned', `${selectedStudent.name} has been assigned successfully`);
         // Close modal and reset
         setShowAddModal(false);
         setSearchQuery('');
         setSearchResults([]);
         setSelectedStudent(null);
+      } else {
+        const errorData = await response.json();
+        toast.error('Failed to assign student', errorData.error || 'An error occurred');
       }
     } catch (error) {
-      console.error('Failed to assign student:', error);
+      toast.error('Assignment error', 'An unexpected error occurred. Please try again');
     } finally {
       setAssigning(false);
     }
@@ -120,7 +133,16 @@ export default function StudentsTab({ mentorId }: StudentsTabProps) {
   const handleRemoveStudent = async (studentId: string) => {
     if (!accessToken) return;
 
-    const confirmed = window.confirm('Are you sure you want to remove this student?');
+    const student = assignedStudents.find(s => s.id === studentId);
+    if (!student) return;
+
+    const confirmed = await confirm({
+      title: 'Remove Student',
+      message: `Are you sure you want to remove ${student.name} from this mentor? This action cannot be undone.`,
+      confirmText: 'Remove',
+      variant: 'danger'
+    });
+
     if (!confirmed) return;
 
     try {
@@ -133,17 +155,25 @@ export default function StudentsTab({ mentorId }: StudentsTabProps) {
 
       if (response.ok) {
         setAssignedStudents(assignedStudents.filter(s => s.id !== studentId));
+        toast.success('Student removed', `${student.name} has been removed from this mentor`);
+      } else {
+        const errorData = await response.json();
+        toast.error('Failed to remove student', errorData.error || 'An error occurred');
       }
     } catch (error) {
-      console.error('Failed to remove student:', error);
+      toast.error('Removal error', 'An unexpected error occurred. Please try again');
     }
   };
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand-green border-t-transparent"></div>
-        <p className="mt-2 text-neutral-600">Loading students...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-40 bg-neutral-200 rounded animate-pulse"></div>
+          <div className="h-11 w-36 bg-neutral-200 rounded animate-pulse"></div>
+        </div>
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
     );
   }
@@ -350,6 +380,9 @@ export default function StudentsTab({ mentorId }: StudentsTabProps) {
           </ModalFooter>
         </div>
       </Modal>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog />
     </div>
   );
 }

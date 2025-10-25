@@ -66,7 +66,7 @@ const allStudents: Record<string, any> = {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -79,7 +79,7 @@ export async function GET(
       );
     }
 
-    const mentorId = params.id;
+    const { id: mentorId } = await params;
     const studentIds = mentorStudents[mentorId] || [];
     const students = studentIds.map(id => allStudents[id]).filter(Boolean);
 

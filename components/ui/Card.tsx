@@ -2,7 +2,7 @@ import React from 'react';
 
 interface CardProps {
   children: React.ReactNode;
-  variant?: 'default' | 'bordered' | 'elevated' | 'cream' | 'outline';
+  variant?: 'default' | 'elevated' | 'subtle' | 'institutional' | 'outline';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   className?: string;
   hoverable?: boolean;
@@ -13,16 +13,21 @@ interface CardProps {
 }
 
 /**
- * Enhanced Card Component
+ * Professional Card Component
  *
- * A flexible card component for displaying content with various styles.
+ * A flexible card component with professional, institutional design suitable for education sector.
  * Features: interactive states, loading skeleton, click handlers, accessibility
  *
  * @param children - Card content
- * @param variant - Card style variant (default, bordered, elevated, cream, outline)
+ * @param variant - Professional card variants:
+ *   - default: Clean white card with professional shadow
+ *   - elevated: White card with stronger elevation
+ *   - subtle: Very subtle gradient background
+ *   - institutional: White card with green left accent border
+ *   - outline: Minimal border-only style
  * @param padding - Internal padding size (none, sm, md, lg)
  * @param className - Additional custom classes
- * @param hoverable - Adds hover effect when true
+ * @param hoverable - Adds professional hover lift effect when true
  * @param onClick - Click handler for interactive cards
  * @param loading - Shows skeleton loading state
  * @param role - ARIA role
@@ -39,12 +44,13 @@ export default function Card({
   role,
   tabIndex
 }: CardProps) {
+  // Professional card variants for institutional design
   const variants = {
-    default: 'bg-white shadow-sm border border-neutral-200',
-    bordered: 'bg-brand-cream border-2 border-brand-green shadow-sm',
-    elevated: 'bg-white shadow-md border border-neutral-100',
-    cream: 'bg-brand-cream shadow-sm border border-neutral-200',
-    outline: 'bg-white border-2 border-neutral-300'
+    default: 'bg-white shadow-professional border border-neutral-200',
+    elevated: 'bg-white shadow-elevated border border-neutral-100',
+    subtle: 'bg-card-subtle border border-neutral-100',
+    institutional: 'bg-white border-l-4 border-l-brand-green shadow-professional',
+    outline: 'bg-white border border-neutral-300'
   };
 
   const paddings = {
@@ -55,8 +61,9 @@ export default function Card({
   };
 
   const isInteractive = hoverable || onClick;
+  // Professional hover effects - subtle lift and shadow increase
   const interactiveStyles = isInteractive
-    ? 'transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-green focus:ring-offset-2'
+    ? 'hover-lift cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-green focus:ring-offset-2'
     : 'transition-all';
 
   if (loading) {
@@ -123,7 +130,7 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className = '' }: CardTitleProps) {
   return (
-    <h3 className={`text-2xl font-bold text-brand-green ${className}`}>
+    <h3 className={`text-2xl font-semibold text-neutral-900 ${className}`}>
       {children}
     </h3>
   );

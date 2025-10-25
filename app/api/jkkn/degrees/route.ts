@@ -2,18 +2,42 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Transform MyJKKN API degree response to match our interface
+ * The API returns program data with degree fields at the top level
  */
-function transformDegreeData(apiDegree: any) {
+function transformDegreeData(apiProgram: any) {
+  // Degree fields are at the top level of the program object
+  // (degree_id, degree_name, degree_type, etc.)
+
   return {
-    id: apiDegree.id || apiDegree.degree_id,
-    // Map actual API field names to our interface - handle multiple possible field names
-    name: apiDegree.degree_name || apiDegree.name || apiDegree.degreeName || apiDegree.title || 'Unnamed Degree',
-    abbreviation: apiDegree.abbreviation || apiDegree.degree_abbreviation || apiDegree.short_name || apiDegree.code || apiDegree.degree_code || 'N/A',
-    level: apiDegree.level || apiDegree.degree_level || apiDegree.degree_type || apiDegree.type || apiDegree.category || 'Not Specified',
-    is_active: apiDegree.is_active ?? apiDegree.isActive ?? apiDegree.active ?? true,
-    created_at: apiDegree.created_at || apiDegree.createdAt || new Date().toISOString(),
-    updated_at: apiDegree.updated_at || apiDegree.updatedAt || new Date().toISOString(),
+    // Use degree_id as the unique identifier (e.g., "COE-UG", "DGU-UG")
+    id: apiProgram.degree_id || apiProgram.id,
+    // Map actual API field names to our interface
+    name: apiProgram.degree_name || apiProgram.name || 'Unnamed Degree',
+    // Use degree_id as abbreviation (e.g., "COE-UG", "DGU-UG")
+    abbreviation: apiProgram.degree_id || apiProgram.abbreviation || 'N/A',
+    // Use degree_type for level
+    level: apiProgram.degree_type || apiProgram.level || extractLevelFromName(apiProgram.degree_name) || 'Not Specified',
+    is_active: apiProgram.is_active ?? true,
+    created_at: apiProgram.created_at || new Date().toISOString(),
+    updated_at: apiProgram.updated_at || new Date().toISOString(),
   };
+}
+
+/**
+ * Extract level from degree name (e.g., "Undergraduate" -> "ug", "Postgraduate" -> "pg")
+ */
+function extractLevelFromName(degreeName?: string): string | undefined {
+  if (!degreeName) return undefined;
+
+  const nameLower = degreeName.toLowerCase();
+  if (nameLower.includes('undergraduate') || nameLower.includes('bachelor')) {
+    return 'ug';
+  }
+  if (nameLower.includes('postgraduate') || nameLower.includes('master') || nameLower.includes('phd') || nameLower.includes('doctoral')) {
+    return 'pg';
+  }
+
+  return degreeName;
 }
 
 /**
@@ -76,16 +100,42 @@ export async function GET(request: NextRequest) {
     // Debug: Log the actual API response to see field names
     console.log('Degrees API Response:', JSON.stringify(data, null, 2));
     if (data.data && data.data.length > 0) {
-      console.log('First degree object:', JSON.stringify(data.data[0], null, 2));
+      console.log('First program object:', JSON.stringify(data.data[0], null, 2));
     }
 
-    // Transform the data to match our interface
+    // Transform and deduplicate degrees
+    // The API returns programs with degree fields at the top level (degree_id, degree_name, etc.)
+    // We need to deduplicate by degree_id to get unique degrees only
+    const degreesMap = new Map();
+
+    if (data.data && Array.isArray(data.data)) {
+      data.data.forEach((program: any) => {
+        // Check for degree_id at the top level (not nested)
+        const degreeId = program.degree_id;
+        if (degreeId && !degreesMap.has(degreeId)) {
+          const transformedDegree = transformDegreeData(program);
+          degreesMap.set(degreeId, transformedDegree);
+        }
+      });
+    }
+
+    const uniqueDegrees = Array.from(degreesMap.values());
+
+    console.log(`Extracted ${uniqueDegrees.length} unique degrees from ${data.data?.length || 0} programs`);
+    if (uniqueDegrees.length > 0) {
+      console.log('First transformed degree:', JSON.stringify(uniqueDegrees[0], null, 2));
+    }
+
+    // Return the unique degrees with updated metadata
     const transformedData = {
       ...data,
-      data: data.data ? data.data.map(transformDegreeData) : []
+      data: uniqueDegrees,
+      metadata: {
+        ...data.metadata,
+        total: uniqueDegrees.length,
+        totalPages: Math.ceil(uniqueDegrees.length / (data.metadata?.limit || 10)),
+      }
     };
-
-    console.log('Transformed degree data:', JSON.stringify(transformedData.data[0], null, 2));
 
     return NextResponse.json({
       success: true,

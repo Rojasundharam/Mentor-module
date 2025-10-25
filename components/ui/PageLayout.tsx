@@ -157,15 +157,15 @@ export function Hero({
   const subtitleColor = background === 'green' ? 'text-brand-cream' : 'text-neutral-600';
 
   return (
-    <Section background={background} spacing="md">
+    <Section background={background} spacing="sm">
       <Container className={noPadding ? '!px-0' : ''}>
         <div className={alignments[alignment]}>
-          <h1 className={`text-3xl md:text-4xl lg:text-5xl font-bold ${textColor} mb-3`}>
+          <h1 className={`text-2xl md:text-3xl lg:text-4xl font-semibold ${textColor} mb-2`}>
             {title}
           </h1>
 
           {subtitle && (
-            <p className={`text-base md:text-lg ${subtitleColor} max-w-3xl ${alignment === 'center' ? 'mx-auto' : ''}`}>
+            <p className={`text-sm md:text-base ${subtitleColor} max-w-3xl ${alignment === 'center' ? 'mx-auto' : ''}`}>
               {subtitle}
             </p>
           )}

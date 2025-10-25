@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useToast } from '@/components/providers/ToastProvider';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input, { TextArea } from '@/components/ui/Input';
 import Modal, { ModalFooter } from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import type { CounselingSession, Student } from '@/lib/types/mentor';
 
 interface CounselingTabProps {
@@ -15,6 +17,7 @@ interface CounselingTabProps {
 
 export default function CounselingTab({ mentorId }: CounselingTabProps) {
   const { accessToken, user } = useAuth();
+  const { toast } = useToast();
 
   const [sessions, setSessions] = useState<CounselingSession[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -59,17 +62,21 @@ export default function CounselingTab({ mentorId }: CounselingTabProps) {
           headers: { 'Authorization': `Bearer ${accessToken}` },
         });
 
-        if (sessionsRes.ok) {
+          if (sessionsRes.ok) {
           const data = await sessionsRes.json();
           setSessions(data.sessions || []);
+        } else {
+          toast.error('Failed to load sessions', 'Could not fetch counseling sessions');
         }
 
         if (studentsRes.ok) {
           const data = await studentsRes.json();
           setStudents(data.students || []);
+        } else {
+          toast.error('Failed to load students', 'Could not fetch assigned students');
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        toast.error('Error loading data', 'An unexpected error occurred while loading the page');
       } finally {
         setLoading(false);
       }
@@ -85,8 +92,17 @@ export default function CounselingTab({ mentorId }: CounselingTabProps) {
 
   // Create new session
   const handleCreateSession = async () => {
+    // Validate required fields
     if (!accessToken || !formData.studentId || !formData.sessionName || !formData.date || !formData.time) {
-      alert('Please fill in all required fields');
+      toast.warning('Missing fields', 'Please fill in all required fields');
+      return;
+    }
+
+    // Validate date is not in the past
+    const selectedDate = new Date(`${formData.date}T${formData.time}`);
+    const now = new Date();
+    if (selectedDate < now) {
+      toast.warning('Invalid date', 'Please select a future date and time for the session');
       return;
     }
 
@@ -105,6 +121,7 @@ export default function CounselingTab({ mentorId }: CounselingTabProps) {
         const data = await response.json();
         setSessions([data.session, ...sessions]);
         setShowCreateModal(false);
+        toast.success('Session created', 'Counseling session has been scheduled successfully');
         // Reset form
         setFormData({
           studentId: '',
@@ -114,9 +131,12 @@ export default function CounselingTab({ mentorId }: CounselingTabProps) {
           notes: '',
           attachment: ''
         });
+      } else {
+        const errorData = await response.json();
+        toast.error('Failed to create session', errorData.error || 'An error occurred');
       }
     } catch (error) {
-      console.error('Failed to create session:', error);
+      toast.error('Error creating session', 'An unexpected error occurred. Please try again');
     } finally {
       setCreating(false);
     }
@@ -142,8 +162,9 @@ export default function CounselingTab({ mentorId }: CounselingTabProps) {
 
   // Submit feedback
   const handleSubmitFeedback = async () => {
+    // Validate required fields
     if (!accessToken || !selectedSession || !feedbackData.counselingQueries || !feedbackData.actionTaken) {
-      alert('Please fill in all feedback fields');
+      toast.warning('Missing feedback', 'Please fill in all feedback fields');
       return;
     }
 
@@ -168,10 +189,18 @@ export default function CounselingTab({ mentorId }: CounselingTabProps) {
           s.id === selectedSession.id ? data.session : s
         ));
         setSelectedSession(data.session);
-        alert('Feedback submitted successfully');
+        toast.success('Feedback submitted', 'Your feedback has been saved successfully');
+        // Clear feedback form
+        setFeedbackData({
+          counselingQueries: '',
+          actionTaken: ''
+        });
+      } else {
+        const errorData = await response.json();
+        toast.error('Failed to submit feedback', errorData.error || 'An error occurred');
       }
     } catch (error) {
-      console.error('Failed to submit feedback:', error);
+      toast.error('Error submitting feedback', 'An unexpected error occurred. Please try again');
     } finally {
       setSubmittingFeedback(false);
     }
@@ -179,9 +208,14 @@ export default function CounselingTab({ mentorId }: CounselingTabProps) {
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand-green border-t-transparent"></div>
-        <p className="mt-2 text-neutral-600">Loading counseling sessions...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-48 bg-neutral-200 rounded animate-pulse"></div>
+          <div className="h-11 w-40 bg-neutral-200 rounded animate-pulse"></div>
+        </div>
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
     );
   }

@@ -2,18 +2,42 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Transform MyJKKN API degree response to match our interface
+ * The API returns degree data with fields at the top level
  */
-function transformDegreeData(apiDegree: any) {
+function transformDegreeData(apiData: any) {
+  // Degree fields are at the top level
+  // (degree_id, degree_name, degree_type, etc.)
+
   return {
-    id: apiDegree.id,
+    // Use degree_id as the unique identifier (e.g., "COE-UG", "DGU-UG")
+    id: apiData.degree_id || apiData.id,
     // Map actual API field names to our interface
-    name: apiDegree.degree_name || apiDegree.name || undefined,
-    abbreviation: apiDegree.degree_id || apiDegree.abbreviation || undefined,
-    level: apiDegree.degree_type || apiDegree.level || undefined,
-    is_active: apiDegree.is_active ?? true,
-    created_at: apiDegree.created_at || new Date().toISOString(),
-    updated_at: apiDegree.updated_at || new Date().toISOString(),
+    name: apiData.degree_name || apiData.name || 'Unnamed Degree',
+    // Use degree_id as abbreviation (e.g., "COE-UG", "DGU-UG")
+    abbreviation: apiData.degree_id || apiData.abbreviation || 'N/A',
+    // Use degree_type for level
+    level: apiData.degree_type || apiData.level || extractLevelFromName(apiData.degree_name) || 'Not Specified',
+    is_active: apiData.is_active ?? true,
+    created_at: apiData.created_at || new Date().toISOString(),
+    updated_at: apiData.updated_at || new Date().toISOString(),
   };
+}
+
+/**
+ * Extract level from degree name (e.g., "Undergraduate" -> "ug", "Postgraduate" -> "pg")
+ */
+function extractLevelFromName(degreeName?: string): string | undefined {
+  if (!degreeName) return undefined;
+
+  const nameLower = degreeName.toLowerCase();
+  if (nameLower.includes('undergraduate') || nameLower.includes('bachelor')) {
+    return 'ug';
+  }
+  if (nameLower.includes('postgraduate') || nameLower.includes('master') || nameLower.includes('phd') || nameLower.includes('doctoral')) {
+    return 'pg';
+  }
+
+  return degreeName;
 }
 
 /**

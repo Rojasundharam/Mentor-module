@@ -33,6 +33,7 @@ export default function MentorListingPage() {
     }
 
     try {
+      console.log('[MentorPage] Searching for mentors with query:', query);
       setLoading(true);
       setError(null);
       setHasSearched(true);
@@ -43,14 +44,25 @@ export default function MentorListingPage() {
         },
       });
 
+      console.log('[MentorPage] API response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch mentors');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[MentorPage] API error response:', errorData);
+        throw new Error(errorData.details || errorData.error || 'Failed to fetch mentors');
       }
 
       const data = await response.json();
+      console.log('[MentorPage] Received mentors:', {
+        count: data.mentors?.length,
+        total: data.total,
+      });
+
       setMentors(data.mentors || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to search mentors');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to search mentors';
+      console.error('[MentorPage] Error searching mentors:', errorMessage);
+      setError(errorMessage);
       setMentors([]);
     } finally {
       setLoading(false);
@@ -216,7 +228,7 @@ export default function MentorListingPage() {
                             />
                           ) : (
                             <div className="w-16 h-16 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-2xl font-bold border-2 border-brand-green shadow-sm">
-                              {mentor.name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)}
+                              {mentor.name ? mentor.name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2) : '?'}
                             </div>
                           )}
                         </div>
@@ -348,7 +360,7 @@ export default function MentorListingPage() {
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-brand-yellow text-brand-green flex items-center justify-center text-lg font-bold border-2 border-brand-green">
-                              {mentor.name.charAt(0).toUpperCase()}
+                              {mentor.name?.charAt(0).toUpperCase() || '?'}
                             </div>
                           )}
                           <span className="font-semibold text-brand-green">{mentor.name}</span>

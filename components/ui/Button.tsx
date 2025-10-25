@@ -16,12 +16,17 @@ interface ButtonProps {
 }
 
 /**
- * Enhanced Button Component
+ * Professional Button Component
  *
- * A versatile button component following the modern design system.
+ * A versatile button component with professional, institutional design.
  * Features: loading states, icons, full-width option, multiple variants
  *
- * @param variant - Button style variant (primary, secondary, outline, ghost, danger)
+ * @param variant - Professional button variants:
+ *   - primary: Institutional green background (main actions)
+ *   - secondary: White with green border (secondary actions)
+ *   - outline: Neutral outlined style (tertiary actions)
+ *   - ghost: Minimal text-only style (subtle actions)
+ *   - danger: Red style for destructive actions
  * @param size - Button size (sm, md, lg)
  * @param children - Button content
  * @param onClick - Click handler function
@@ -57,12 +62,13 @@ export default function Button({
     ${fullWidth ? 'w-full' : ''}
   `.trim().replace(/\s+/g, ' ');
 
+  // Professional button variants for institutional design
   const variants = {
-    primary: 'bg-brand-yellow text-brand-green hover:bg-accent-400 focus:ring-brand-yellow active:bg-accent-500 shadow-sm hover:shadow-md',
-    secondary: 'bg-brand-green text-brand-cream hover:bg-primary-700 focus:ring-brand-green active:bg-primary-800 shadow-sm hover:shadow-md',
-    outline: 'border-2 border-brand-green text-brand-green hover:bg-brand-green hover:text-brand-cream focus:ring-brand-green bg-transparent',
-    ghost: 'text-brand-green hover:bg-brand-cream focus:ring-brand-green bg-transparent',
-    danger: 'bg-error-500 text-white hover:bg-error-600 focus:ring-error-500 active:bg-error-700 shadow-sm hover:shadow-md'
+    primary: 'bg-brand-green text-white hover:bg-neutral-700 focus:ring-brand-green active:bg-neutral-800 shadow-professional hover:shadow-elevated',
+    secondary: 'bg-white border-2 border-brand-green text-brand-green hover:bg-neutral-50 focus:ring-brand-green active:bg-neutral-100 shadow-professional',
+    outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-400 active:bg-neutral-100 bg-transparent',
+    ghost: 'text-brand-green hover:bg-neutral-50 focus:ring-brand-green active:bg-neutral-100 bg-transparent',
+    danger: 'bg-error-500 text-white hover:bg-error-600 focus:ring-error-500 active:bg-error-700 shadow-professional hover:shadow-elevated'
   };
 
   const sizes = {

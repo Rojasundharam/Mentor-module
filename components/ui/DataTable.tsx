@@ -208,10 +208,10 @@ export default function DataTable<T extends Record<string, any>>({
                   key={key}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={`
-                    ${striped && index % 2 === 1 ? 'bg-neutral-50' : 'bg-white'}
+                    ${striped && index % 2 === 1 ? 'bg-neutral-50/50' : 'bg-white'}
                     ${onRowClick ? 'cursor-pointer' : ''}
-                    ${hoverable && onRowClick ? 'hover:bg-brand-cream' : ''}
-                    transition-colors
+                    ${hoverable && onRowClick ? 'hover:bg-neutral-100 hover:shadow-sm' : ''}
+                    transition-all duration-150
                   `}
                   role={onRowClick ? 'button' : undefined}
                   tabIndex={onRowClick ? 0 : undefined}

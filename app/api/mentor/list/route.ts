@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchStaff, type StaffMember } from '@/lib/api/jkkn-api';
+
+// Local interface for staff member (to avoid client-side imports)
+interface StaffMember {
+  id: string;
+  first_name: string;
+  last_name: string;
+  gender: string;
+  email: string;
+  phone: string;
+  institution_email: string;
+  designation: string;
+  department: {
+    id: string;
+    department_name: string;
+  } | string;
+  institution: {
+    id: string;
+    institution_name: string;
+  } | string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 /**
  * GET /api/mentor/list
@@ -25,6 +46,20 @@ export async function GET(request: NextRequest) {
     // Get search query from URL parameters
     const searchParams = request.nextUrl.searchParams;
     const searchQuery = searchParams.get('search') || '';
+
+    // Get API key from environment (server-side only)
+    const apiKey = process.env.NEXT_PUBLIC_MYJKKN_API_KEY;
+    const baseUrl = process.env.NEXT_PUBLIC_MYJKKN_BASE_URL || 'https://www.jkkn.ai/api';
+
+    if (!apiKey) {
+      return NextResponse.json(
+        {
+          error: 'MyJKKN API key not configured',
+          details: 'Please add NEXT_PUBLIC_MYJKKN_API_KEY to .env.local'
+        },
+        { status: 500 }
+      );
+    }
 
     // Designations that qualify as mentors (faculty members)
     const mentorDesignations = [
@@ -59,12 +94,89 @@ export async function GET(request: NextRequest) {
     let allMentors: any[] = [];
     const pageLimit = 100; // Get 100 per page (sufficient for most searches)
 
-    try {
-      console.log(`Fetching staff from JKKN API for search: "${searchQuery}"`);
-      const response = await fetchStaff(1, pageLimit);
+    console.log('[Mentor List] Fetching staff from JKKN API with endpoint fallback...');
 
-      if (!response.data || response.data.length === 0) {
-        console.log('No staff data returned from API');
+    // Try multiple possible endpoints (staff endpoint location varies by API)
+    const possibleEndpoints = [
+      `${baseUrl}/api-management/staff?page=1&limit=${pageLimit}`,
+      `${baseUrl}/api-management/organizations/employees?page=1&limit=${pageLimit}`,
+      `${baseUrl}/api/staff?page=1&limit=${pageLimit}`,
+      `${baseUrl}/staff?page=1&limit=${pageLimit}`,
+    ];
+
+    let apiData: any = null;
+    let successfulEndpoint: string | null = null;
+    let lastError: string = '';
+
+    try {
+      // Try each endpoint until one works
+      for (const url of possibleEndpoints) {
+        console.log(`[Mentor List] Trying endpoint: ${url}`);
+
+        try {
+          const apiResponse = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            // Add cache control for better performance
+            next: { revalidate: 60 }, // Cache for 60 seconds
+          });
+
+          console.log(`[Mentor List] Response status: ${apiResponse.status}`);
+
+          // Check if response is successful
+          if (apiResponse.ok) {
+            const contentType = apiResponse.headers.get('content-type');
+
+            // Verify it's JSON, not HTML
+            if (contentType && contentType.includes('application/json')) {
+              apiData = await apiResponse.json();
+              successfulEndpoint = url;
+              console.log(`[Mentor List] ✓ SUCCESS! Endpoint works: ${url}`);
+              break; // Exit loop on success
+            } else {
+              const text = await apiResponse.text();
+              console.log(`[Mentor List] ✗ Got HTML instead of JSON from ${url}`);
+              lastError = `Got HTML instead of JSON`;
+              continue; // Try next endpoint
+            }
+          } else {
+            // Log failure and try next endpoint
+            const errorText = await apiResponse.text();
+            const isHtml = errorText.includes('<!DOCTYPE') || errorText.includes('<html');
+            console.log(`[Mentor List] ✗ Failed with ${apiResponse.status}: ${isHtml ? 'HTML 404 page' : errorText.substring(0, 100)}`);
+            lastError = `${apiResponse.status} ${apiResponse.statusText}`;
+            continue; // Try next endpoint
+          }
+        } catch (fetchError) {
+          console.error(`[Mentor List] ✗ Fetch error for ${url}:`, fetchError);
+          lastError = fetchError instanceof Error ? fetchError.message : 'Fetch failed';
+          continue; // Try next endpoint
+        }
+      }
+
+      // If no endpoint worked, throw error with details
+      if (!apiData || !successfulEndpoint) {
+        console.error('[Mentor List] ✗ ALL ENDPOINTS FAILED');
+        console.error('[Mentor List] Attempted endpoints:', possibleEndpoints);
+        throw new Error(
+          `No working staff endpoint found. Tried ${possibleEndpoints.length} endpoints. ` +
+          `Last error: ${lastError}. ` +
+          `The MyJKKN API might not have a staff endpoint, or it uses a different path.`
+        );
+      }
+
+      console.log('[Mentor List] Using successful endpoint:', successfulEndpoint);
+
+      console.log('[Mentor List] Staff API response:', {
+        dataLength: apiData.data?.length,
+        totalFields: Object.keys(apiData).join(', '),
+      });
+
+      if (!apiData.data || apiData.data.length === 0) {
+        console.log('[Mentor List] No staff members found in database');
         return NextResponse.json({
           success: true,
           mentors: [],
@@ -73,53 +185,116 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      console.log(`Received ${response.data.length} staff members from API`);
+      // Log first staff member to see actual field structure
+      if (apiData.data.length > 0) {
+        console.log('[Mentor List] First staff member (raw):', JSON.stringify(apiData.data[0], null, 2));
+        console.log('[Mentor List] Available fields:', Object.keys(apiData.data[0]));
+      }
+
+      // Transform and filter staff members who are mentors
+      const staffMembers = apiData.data.map((staff: any) => {
+        // Extract name fields with multiple fallbacks
+        const firstName = staff.first_name || staff.firstName || staff.name?.first || '';
+        const lastName = staff.last_name || staff.lastName || staff.name?.last || '';
+
+        // If no first/last name, try to parse a single 'name' field
+        let finalFirstName = firstName;
+        let finalLastName = lastName;
+
+        if (!firstName && !lastName && staff.name && typeof staff.name === 'string') {
+          const nameParts = staff.name.trim().split(' ');
+          finalFirstName = nameParts[0] || '';
+          finalLastName = nameParts.slice(1).join(' ') || '';
+        }
+
+        return {
+          id: staff.id || staff.staff_id || '',
+          first_name: finalFirstName,
+          last_name: finalLastName,
+          gender: staff.gender || 'Not Specified',
+          email: staff.email || staff.personal_email || '',
+          phone: staff.phone || staff.phone_number || staff.mobile || '',
+          institution_email: staff.institution_email || staff.institutionEmail || staff.email || '',
+          designation: staff.designation || staff.position || 'Staff',
+          department: staff.department || 'Unknown Department',
+          institution: staff.institution || 'Unknown Institution',
+        };
+      });
 
       // Filter staff members who are mentors
-      allMentors = response.data.filter((staff: StaffMember) =>
+      allMentors = staffMembers.filter((staff: StaffMember) =>
         staff.designation && isMentorDesignation(staff.designation)
       );
 
-      console.log(`Filtered to ${allMentors.length} faculty mentors`);
+      console.log('[Mentor List] Filtered mentors:', {
+        totalStaff: staffMembers.length,
+        mentorsFound: allMentors.length,
+      });
     } catch (err) {
-      console.error('Error fetching staff from JKKN API:', err);
+      console.error('[Mentor List] Error fetching staff:', err);
+
+      // Extract meaningful error details
+      const errorMessage = err instanceof Error
+        ? err.message
+        : typeof err === 'object' && err !== null
+          ? JSON.stringify(err)
+          : 'Unknown error';
+
+      const errorDetails = err instanceof Error
+        ? { message: err.message, stack: err.stack }
+        : err;
+
+      console.error('[Mentor List] Full error object:', errorDetails);
+
       return NextResponse.json(
         {
           error: 'Failed to fetch staff from JKKN API',
-          details: err instanceof Error ? err.message : 'Unknown error',
+          details: errorMessage,
+          fullError: errorDetails,
         },
         { status: 500 }
       );
     }
 
     // Transform staff data to mentor format
-    let mentors = allMentors.map((staff: StaffMember) => ({
-      id: staff.id,
-      name: `${staff.first_name} ${staff.last_name}`.trim(),
-      email: staff.email || staff.institution_email,
-      department: getDepartmentName(staff.department),
-      designation: staff.designation,
-      phone: staff.phone || '',
-      avatar: null,
-      totalStudents: 0, // TODO: Get from database if available
-    }));
+    let mentors = allMentors.map((staff: StaffMember) => {
+      // Safely construct name with fallbacks
+      const firstName = staff.first_name || '';
+      const lastName = staff.last_name || '';
+      const fullName = `${firstName} ${lastName}`.trim();
+      const finalName = fullName || staff.email?.split('@')[0] || staff.id || 'Unknown';
+
+      return {
+        id: staff.id,
+        name: finalName,
+        email: staff.email || staff.institution_email,
+        department: getDepartmentName(staff.department),
+        designation: staff.designation,
+        phone: staff.phone || '',
+        avatar: null,
+        totalStudents: 0, // TODO: Get from database if available
+      };
+    });
 
     // Filter by search query if provided
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      const beforeFilter = mentors.length;
+
+      console.log('[Mentor List] Searching with query:', query);
 
       mentors = mentors.filter((mentor: any) =>
+        mentor.id.toLowerCase().includes(query) ||
         mentor.name.toLowerCase().includes(query) ||
         mentor.email.toLowerCase().includes(query) ||
         mentor.department.toLowerCase().includes(query) ||
         mentor.designation.toLowerCase().includes(query)
       );
 
-      console.log(`Search filtered: ${beforeFilter} → ${mentors.length} mentors matching "${searchQuery}"`);
+      console.log('[Mentor List] Search results:', {
+        query,
+        resultsFound: mentors.length,
+      });
     }
-
-    console.log(`✅ Returning ${mentors.length} mentors from JKKN API`);
 
     return NextResponse.json({
       success: true,
@@ -129,7 +304,6 @@ export async function GET(request: NextRequest) {
       searchQuery: searchQuery,
     });
   } catch (error) {
-    console.error('Error fetching mentors:', error);
     return NextResponse.json(
       { error: 'Failed to fetch mentors' },
       { status: 500 }
